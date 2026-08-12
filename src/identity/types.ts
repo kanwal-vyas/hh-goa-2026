@@ -11,7 +11,7 @@
  *   PosterLayout ──renderPoster──▶ canvas (preview / export)
  */
 
-export type VariantId = 'A' | 'B' | 'C' | 'D';
+export type VariantId = 'A' | 'B' | 'C' | 'D' | 'E';
 
 /** Raw user input plus the deterministic roll counter for re-rolls. */
 export interface BuilderInput {
@@ -27,6 +27,7 @@ export interface Identity {
   seed: string; // full seed string (deterministic per input + roll)
   variant: VariantId;
   idNumber: string; // 3-digit builder number, seeded
+  title: string; // role-derived builder title (deterministic)
   layout: PosterLayout;
 }
 
@@ -147,6 +148,7 @@ export interface PosterLayout {
   seed: number;
   name: string;
   role: string;
+  title: string; // the generated builder title
   idNumber: string;
   palette: PosterPalette;
   headerLeft: TextBlock;
@@ -154,6 +156,7 @@ export interface PosterLayout {
   footer: TextBlock[];
   nameBlock: TextBlock;
   roleBlock: TextBlock;
+  titleBlock: TextBlock; // the generated builder title (hand-drawn accent)
   ghost?: TextBlock; // giant type behind the photo (variant C)
   ghostText?: string; // the text drawn in the ghost block
   photo: PhotoPlacement;
@@ -163,4 +166,6 @@ export interface PosterLayout {
   stamp: Stamp;
   marks: Mark[];
   ticket?: TicketShape;
+  /** A printed pigment block — an asymmetric paint stripe (variant E). */
+  paint?: { x: number; y: number; w: number; h: number; rotation: number; color: string; seed: number; opacity?: number };
 }

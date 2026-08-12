@@ -35,7 +35,7 @@ export function GeneratingPanel({ identity, photoUrl }: GeneratingPanelProps) {
         </div>
 
         <div className="gen-name">{identity.layout.name}</div>
-        <div className="gen-role">{identity.layout.role}</div>
+        <div className="gen-role">{identity.title}</div>
 
         <div className="gen-waves" aria-hidden="true">
           <span className="w1" />

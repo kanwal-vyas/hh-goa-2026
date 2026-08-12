@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Identity } from '../identity/types';
 import { renderPoster, loadPosterFonts, POSTER_W, POSTER_H } from '../identity/renderPoster';
-import { downloadPosterPNG } from '../identity/exportPoster';
+import { downloadPosterPNG, renderPosterBlob } from '../identity/exportPoster';
 import './BuilderPoster.css';
 
 interface BuilderPosterProps {
@@ -24,6 +24,7 @@ export function BuilderPoster({ identity, photoUrl, onReRoll, onEdit }: BuilderP
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [ready, setReady] = useState(false);
+  const [sharing, setSharing] = useState<'idle' | 'copied' | 'download'>('idle');
 
   useEffect(() => {
     let cancelled = false;
@@ -81,6 +82,41 @@ export function BuilderPoster({ identity, photoUrl, onReRoll, onEdit }: BuilderP
     }
   };
 
+  /**
+   * Share to X: copy the actual PNG to the clipboard (paste it straight
+   * into the composer), then open X with a pre-filled #FrameInGoa caption.
+   * If the clipboard API is unavailable, fall back to downloading the image
+   * alongside the open composer.
+   */
+  const handleShare = async () => {
+    const blob = await renderPosterBlob(identity.layout, imgRef.current);
+    const caption = [
+      'Just got my Builder ID for Hacker House Goa 2026 \u{1F334}\u26A1',
+      '',
+      identity.title,
+      '',
+      '#FrameInGoa',
+    ].join('\n');
+
+    let copied = false;
+    if (blob && typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+      try {
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        copied = true;
+      } catch {
+        copied = false;
+      }
+    }
+    if (!copied && blob) {
+      await downloadPosterPNG(identity.layout, imgRef.current);
+    }
+    setSharing(copied ? 'copied' : 'download');
+    window.setTimeout(() => setSharing('idle'), 4000);
+
+    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <section className="poster-stage">
       <div className="poster-eyebrow">
@@ -98,7 +134,7 @@ export function BuilderPoster({ identity, photoUrl, onReRoll, onEdit }: BuilderP
         </div>
 
         <div className="poster-meta">
-          <span>Variant {identity.variant}</span>
+          <span>{identity.title}</span>
           <span className="dot" />
           <span>Builder #{identity.idNumber}</span>
           <span className="dot" />
@@ -108,6 +144,13 @@ export function BuilderPoster({ identity, photoUrl, onReRoll, onEdit }: BuilderP
         <div className="poster-actions">
           <button className="btn-primary" onClick={handleDownload} disabled={downloading}>
             {downloading ? 'Printing…' : 'Download Poster ⬇'}
+          </button>
+          <button className="btn-share" onClick={handleShare}>
+            {sharing === 'copied'
+              ? 'Image copied — paste into the composer ✓'
+              : sharing === 'download'
+                ? 'Image downloaded — attach it on X'
+                : 'Share to X ✳'}
           </button>
           <button className="btn-ghost" onClick={onReRoll}>
             Re-roll

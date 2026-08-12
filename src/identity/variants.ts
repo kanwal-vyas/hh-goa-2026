@@ -35,13 +35,17 @@ interface Input {
   name: string;
   role: string;
   idNumber: string;
+  title: string;
 }
 
 function buildBase(
   rng: () => number,
   variant: VariantId,
   palette: PosterPalette
-): Omit<PosterLayout, 'name' | 'role' | 'idNumber' | 'nameBlock' | 'roleBlock' | 'photo' | 'waves' | 'sun' | 'palms' | 'stamp' | 'marks' | 'ghost' | 'ticket'> {
+): Omit<
+  PosterLayout,
+  'name' | 'role' | 'title' | 'idNumber' | 'nameBlock' | 'roleBlock' | 'titleBlock' | 'photo' | 'waves' | 'sun' | 'palms' | 'stamp' | 'marks' | 'ghost' | 'ticket' | 'paint'
+> {
   return {
     variant,
     seed: Math.floor(rng() * 1e9),
@@ -174,6 +178,7 @@ function variantA(rng: () => number, input: Input, palette: PosterPalette): Post
     ...base,
     name: input.name,
     role: input.role,
+    title: input.title,
     idNumber: input.idNumber,
     nameBlock: {
       x: 540,
@@ -200,6 +205,19 @@ function variantA(rng: () => number, input: Input, palette: PosterPalette): Post
       italic: true,
       weight: 500,
       maxWidth: 920,
+      maxLines: 1,
+    },
+    titleBlock: {
+      x: 320,
+      y: 736,
+      size: 46,
+      rotation: -3,
+      align: 'left',
+      anchor: 'baseline',
+      color: palette.ink,
+      font: 'hand',
+      weight: 700,
+      maxWidth: 380,
       maxLines: 1,
     },
     photo,
@@ -261,6 +279,7 @@ function variantB(rng: () => number, input: Input, palette: PosterPalette): Post
     ...base,
     name: input.name,
     role: input.role,
+    title: input.title,
     idNumber: input.idNumber,
     nameBlock: {
       x: 648,
@@ -288,6 +307,19 @@ function variantB(rng: () => number, input: Input, palette: PosterPalette): Post
       weight: 500,
       maxWidth: 460,
       maxLines: 2,
+    },
+    titleBlock: {
+      x: 648,
+      y: 796,
+      size: 46,
+      rotation: -1.5,
+      align: 'left',
+      anchor: 'baseline',
+      color: palette.ink,
+      font: 'hand',
+      weight: 700,
+      maxWidth: 420,
+      maxLines: 1,
     },
     photo,
     waves: { y: 1194, colors: [palette.ocean, palette.oceanLight, palette.turquoise], amp: 62, seed: rng() * TWO_PI },
@@ -337,6 +369,7 @@ function variantC(rng: () => number, input: Input, palette: PosterPalette): Post
     ...base,
     name: input.name,
     role: input.role,
+    title: input.title,
     idNumber: input.idNumber,
     ghost: {
       x: 540,
@@ -376,6 +409,19 @@ function variantC(rng: () => number, input: Input, palette: PosterPalette): Post
       italic: true,
       weight: 500,
       maxWidth: 900,
+      maxLines: 1,
+    },
+    titleBlock: {
+      x: 178,
+      y: 340,
+      size: 46,
+      rotation: -2,
+      align: 'left',
+      anchor: 'baseline',
+      color: palette.ink,
+      font: 'hand',
+      weight: 700,
+      maxWidth: 400,
       maxLines: 1,
     },
     photo,
@@ -431,6 +477,7 @@ function variantD(rng: () => number, input: Input, palette: PosterPalette): Post
     ...base,
     name: input.name,
     role: input.role,
+    title: input.title,
     idNumber: input.idNumber,
     nameBlock: {
       x: 560,
@@ -459,6 +506,19 @@ function variantD(rng: () => number, input: Input, palette: PosterPalette): Post
       maxWidth: 500,
       maxLines: 2,
     },
+    titleBlock: {
+      x: 560,
+      y: 660,
+      size: 38,
+      rotation: -1,
+      align: 'left',
+      anchor: 'baseline',
+      color: palette.ink,
+      font: 'hand',
+      weight: 700,
+      maxWidth: 440,
+      maxLines: 1,
+    },
     photo,
     waves: { y: 1216, colors: [palette.ocean, palette.oceanLight, palette.turquoise], amp: 60, seed: rng() * TWO_PI },
     sun: { x: 940, y: 132, r: 76, color: palette.sun, rays: 10, seed: rng() * TWO_PI },
@@ -481,6 +541,101 @@ function variantD(rng: () => number, input: Input, palette: PosterPalette): Post
 }
 
 /* ------------------------------------------------------------------ */
+/* Variant E — Asymmetric / strong graphics                            */
+/* ------------------------------------------------------------------ */
+
+function variantE(rng: () => number, input: Input, palette: PosterPalette): PosterLayout {
+  const base = buildBase(rng, 'E', palette);
+  const photo = {
+    x: 322,
+    y: 452,
+    w: 428,
+    h: 468,
+    rotation: -3 + (rng() - 0.5) * 1.2,
+    matInset: 36,
+    tearSeed: Math.floor(rng() * 1e6) + 71,
+    tape: tapeFor(322, 452, 428, 468, rng),
+    label: { text: `you · ${firstName(input.name)}`, x: 500, y: 220, rotation: -5 + (rng() - 0.5) * 6, color: palette.accent },
+  };
+
+  const marks: Mark[] = [
+    { kind: 'arrow', x: 300, y: 300, rotation: -32, length: 190, color: palette.accent2 },
+    { kind: 'arrow', x: 880, y: 640, rotation: 150, length: 170, color: palette.accent2 },
+    { kind: 'star', x: 620, y: 240, r: 28, rotation: rng() * 30, color: palette.accent },
+    { kind: 'star', x: 980, y: 500, r: 20, rotation: rng() * 30, color: palette.sun },
+  ];
+  if (rng() > 0.4) {
+    marks.push({ kind: 'scribble', x: 640, y: 1160, w: 150, rotation: -8, color: palette.inkSoft });
+  }
+
+  return {
+    ...base,
+    name: input.name,
+    role: input.role,
+    title: input.title,
+    idNumber: input.idNumber,
+    nameBlock: {
+      x: 540,
+      y: 990,
+      size: 150,
+      rotation: -1.2,
+      align: 'center',
+      anchor: 'baseline',
+      color: palette.ink,
+      font: 'display',
+      weight: 700,
+      maxWidth: 1020,
+      maxLines: 2,
+    },
+    roleBlock: {
+      x: 540,
+      y: 1082,
+      size: 62,
+      rotation: 0,
+      align: 'center',
+      anchor: 'baseline',
+      color: palette.ink,
+      font: 'hand',
+      weight: 700,
+      maxWidth: 900,
+      maxLines: 1,
+    },
+    titleBlock: {
+      x: 740,
+      y: 330,
+      size: 52,
+      rotation: 4,
+      align: 'left',
+      anchor: 'baseline',
+      color: palette.accent,
+      font: 'hand',
+      weight: 700,
+      maxWidth: 380,
+      maxLines: 1,
+    },
+    photo,
+    waves: { y: 1194, colors: [palette.ocean, palette.oceanLight, palette.turquoise], amp: 68, seed: rng() * TWO_PI },
+    sun: { x: 938, y: 208, r: 128, color: palette.sun, rays: 14, seed: rng() * TWO_PI },
+    palms: [
+      { x: 96, y: 1172, h: 186, seed: 13, lean: 1, opacity: 0.85 },
+      { x: 984, y: 1172, h: 152, seed: 17, lean: -1, opacity: 0.85 },
+    ],
+    stamp: { x: 252, y: 806, r: 70, rotation: -10 + (rng() - 0.5) * 8, color: palette.accent, text1: 'BUILDER', text2: 'ID' },
+    marks,
+    paint: {
+      x: 300,
+      y: 1030,
+      w: 780,
+      h: 150,
+      rotation: -1.2,
+      color: palette.sun,
+      seed: 91,
+      opacity: 0.85,
+    },
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /* entry                                                               */
 /* ------------------------------------------------------------------ */
 
@@ -497,8 +652,11 @@ export function buildVariant(
         ? variantB(rng, input, palette)
         : variant === 'C'
           ? variantC(rng, input, palette)
-          : variantD(rng, input, palette);
+          : variant === 'D'
+            ? variantD(rng, input, palette)
+            : variantE(rng, input, palette);
 
+  layout.title = input.title;
   layout.headerLeft.text = 'Hacker House Goa 2026';
   layout.headerRight.text = `Builder ID ${layout.idNumber}`;
   layout.footer[0].text = 'Goa · India';

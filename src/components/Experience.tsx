@@ -42,9 +42,18 @@ export function Experience() {
     }
   }, [state.stage]);
 
-  const handlePhotoSelect = (file: File) => {
-    const objectUrl = URL.createObjectURL(file);
-    dispatch({ type: 'PHOTO_SELECTED', file, objectUrl });
+  // HEIC (iPhone) is converted client-side to JPEG — the photo never
+  // leaves the browser; the original file still feeds the seed.
+  const handlePhotoSelect = async (file: File) => {
+    try {
+      const { preparePhotoFile } = await import('../utils/photo');
+      const { blob } = await preparePhotoFile(file);
+      const objectUrl = URL.createObjectURL(blob);
+      dispatch({ type: 'PHOTO_SELECTED', file, objectUrl });
+    } catch {
+      const objectUrl = URL.createObjectURL(file);
+      dispatch({ type: 'PHOTO_SELECTED', file, objectUrl });
+    }
   };
 
   const startGeneration = (roll: number) => {
@@ -151,6 +160,9 @@ export function Experience() {
                       {state.stage === 'GENERATING' ? 'Settling in…' : 'Lock My Builder ID ✦'}
                     </button>
                   </div>
+                  <p className="privacy-note">
+                    Your photo stays in your browser &middot; no uploads &middot; no accounts
+                  </p>
                 </div>
               </div>
             </div>

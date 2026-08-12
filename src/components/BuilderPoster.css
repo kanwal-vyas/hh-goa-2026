@@ -162,6 +162,24 @@
   background: rgba(246, 238, 217, 0.12);
 }
 
+.btn-share {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 14px;
+  background: var(--ocean-bright);
+  color: var(--cream-hi);
+  border: none;
+  padding: 14px 26px;
+  border-radius: 100px;
+  cursor: pointer;
+  box-shadow: 0 10px 24px -10px rgba(42, 150, 184, 0.6);
+  transition: transform 0.2s ease;
+}
+
+.btn-share:hover {
+  transform: translateY(-1px);
+}
+
 .btn-primary:disabled {
   opacity: 0.6;
   cursor: progress;

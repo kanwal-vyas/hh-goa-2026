@@ -13,6 +13,7 @@ import {
   drawRegistrationMarks,
   drawFinalGrain,
   roundedRectPath,
+  irregularRectPath,
 } from './primitives';
 
 /**
@@ -61,6 +62,18 @@ export function renderPoster(
   for (const pm of layout.palms) drawPalm(ctx, pm, layout.palette.ink);
   if (layout.sun) drawSun(ctx, layout.sun);
 
+  // asymmetric pigment block (variant E)
+  if (layout.paint) {
+    ctx.save();
+    ctx.globalAlpha = layout.paint.opacity ?? 1;
+    ctx.translate(layout.paint.x, layout.paint.y);
+    ctx.rotate((layout.paint.rotation * Math.PI) / 180);
+    irregularRectPath(ctx, 0, 0, layout.paint.w, layout.paint.h, layout.paint.seed, 7);
+    ctx.fillStyle = layout.paint.color;
+    ctx.fill();
+    ctx.restore();
+  }
+
   // header + footer bands
   drawFitText(ctx, layout.headerLeft.text ?? '', layout.headerLeft);
   drawFitText(ctx, layout.headerRight.text ?? '', layout.headerRight);
@@ -69,9 +82,11 @@ export function renderPoster(
   // the photograph — a physical object on the paper
   drawPhoto(ctx, layout.photo, layout.palette, img);
 
-  // the typographic voice — name + role are the heroes
+  // the typographic voice — name + role are the heroes, the builder title
+  // is the handwritten accent
   drawFitText(ctx, layout.name, layout.nameBlock);
   drawFitText(ctx, layout.role, layout.roleBlock);
+  drawFitText(ctx, layout.title, layout.titleBlock);
 
   // stamp + hand marks
   drawStamp(ctx, layout.stamp);

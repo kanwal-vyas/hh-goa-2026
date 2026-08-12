@@ -302,10 +302,20 @@ export function drawPhoto(
   ctx.rect(-w / 2, -h / 2, w, h);
   ctx.clip();
   if (img && img.complete && img.naturalWidth > 0) {
+    // cover-crop with a face-safe focal anchor: never stretch, never
+    // distort. Portrait photos anchor toward the upper-middle (where faces
+    // live); a tiny seeded horizontal bias applies only when the photo is
+    // noticeably wider than the frame, so a face can never be pushed out.
     const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight);
     const dw = img.naturalWidth * scale;
     const dh = img.naturalHeight * scale;
-    ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+    const overflowX = dw - w;
+    const overflowY = dh - h;
+    const seedH = (rngX(p.tearSeed, 4242, 1) - 0.5); // -0.5..0.5, deterministic
+    const hBias = overflowX > overflowY * 0.4 ? seedH * 0.16 : 0;
+    const ox = -overflowX * (0.5 + hBias);
+    const oy = -overflowY * 0.36; // faces sit in the upper-middle
+    ctx.drawImage(img, ox, oy, dw, dh);
   } else {
     // no photo — print a sun mark in the slot so it never looks empty
     ctx.fillStyle = palette.photoPaper;

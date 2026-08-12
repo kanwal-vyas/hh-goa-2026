@@ -46,7 +46,7 @@ export function PhotoUpload({ objectUrl, onSelect }: PhotoUploadProps) {
                 <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
               </svg>
               <span className="p1">Drop Photo</span>
-              <span className="p2">tap to upload</span>
+              <span className="p2">JPG &middot; PNG &middot; HEIC</span>
             </span>
           )}
           <span className="photo-upload__grain" aria-hidden="true" />
@@ -58,7 +58,7 @@ export function PhotoUpload({ objectUrl, onSelect }: PhotoUploadProps) {
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.heic,.heif"
         className="photo-upload__input"
         onChange={(e) => handleFiles(e.target.files)}
       />
