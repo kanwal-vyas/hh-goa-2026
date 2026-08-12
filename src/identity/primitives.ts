@@ -9,6 +9,49 @@ import { POSTER_W } from './design';
  */
 
 /* ------------------------------------------------------------------ */
+/* Shapes                                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Rounded-rect path that works in every browser — falls back to a manual
+ * arcTo path where ctx.roundRect is unavailable (older iOS Safari).
+ */
+export function roundedRectPath(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number | number[]
+): void {
+  if (typeof ctx.roundRect === 'function') {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, r);
+    return;
+  }
+  const topLeft = typeof r === 'number' ? r : (r[0] ?? 0);
+  const topRight = typeof r === 'number' ? r : (r[1] ?? topLeft);
+  const bottomRight = typeof r === 'number' ? r : (r[2] ?? topRight);
+  const bottomLeft = typeof r === 'number' ? r : (r[3] ?? bottomRight);
+  const rr = (n: number) => Math.max(0, Math.min(n, w / 2, h / 2));
+  const rtl = rr(topLeft);
+  const rtr = rr(topRight);
+  const rbr = rr(bottomRight);
+  const rbl = rr(bottomLeft);
+  ctx.beginPath();
+  ctx.moveTo(x + rtl, y);
+  ctx.lineTo(x + w - rtr, y);
+  ctx.arcTo(x + w, y, x + w, y + rtr, rtr);
+  ctx.lineTo(x + w, y + h - rbr);
+  ctx.arcTo(x + w, y + h, x + w - rbr, y + h, rbr);
+  ctx.lineTo(x + rbl, y + h);
+  ctx.arcTo(x, y + h, x, y + h - rbl, rbl);
+  ctx.lineTo(x, y + rtl);
+  ctx.arcTo(x, y, x + rtl, y, rtl);
+  ctx.closePath();
+}
+
+/* ------------------------------------------------------------------ */
 /* Fonts & text                                                        */
 /* ------------------------------------------------------------------ */
 
@@ -292,8 +335,7 @@ export function drawPhoto(
     ctx.shadowColor = 'rgba(40, 25, 5, 0.3)';
     ctx.shadowBlur = 6;
     ctx.shadowOffsetY = 2;
-    ctx.beginPath();
-    ctx.roundRect(-t.w / 2, -t.h / 2, t.w, t.h, [2, 7, 3, 6]);
+    roundedRectPath(ctx, -t.w / 2, -t.h / 2, t.w, t.h, [2, 7, 3, 6]);
     ctx.fill();
     ctx.restore();
   }
@@ -311,8 +353,7 @@ export function drawPhoto(
     ctx.shadowColor = 'rgba(40, 22, 4, 0.3)';
     ctx.shadowBlur = 8;
     ctx.shadowOffsetY = 3;
-    ctx.beginPath();
-    ctx.roundRect(-tw / 2 - 16, -24, tw + 32, 48, [5, 12, 6, 10]);
+    roundedRectPath(ctx, -tw / 2 - 16, -24, tw + 32, 48, [5, 12, 6, 10]);
     ctx.fill();
     ctx.shadowColor = 'transparent';
     ctx.fillStyle = p.label.color;

@@ -309,6 +309,45 @@
   }
 }
 
+@media (max-width: 560px) {
+  /* keep the assembling sheet fully inside the phone viewport — the photo
+     and type are compacted so nothing collides with the wave strip */
+  .gen-sheet {
+    padding: 24px 22px;
+  }
+
+  .gen-photo {
+    width: 40%;
+    margin: 16px auto 0;
+  }
+
+  .gen-photo__mat {
+    inset: -6px;
+  }
+
+  .gen-name {
+    font-size: clamp(20px, 5.2vw, 26px);
+    margin-top: 12px;
+  }
+
+  .gen-role {
+    font-size: clamp(13px, 3.2vw, 16px);
+    margin-top: 4px;
+  }
+
+  .gen-waves {
+    height: 18%;
+  }
+
+  .gen-stamp {
+    width: 70px;
+    height: 70px;
+    font-size: 11px;
+    right: 16px;
+    bottom: 24%;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gen-overlay,
   .gen-sheet,

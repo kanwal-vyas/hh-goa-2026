@@ -12,6 +12,7 @@ import {
   drawMark,
   drawRegistrationMarks,
   drawFinalGrain,
+  roundedRectPath,
 } from './primitives';
 
 /**
@@ -97,8 +98,7 @@ function drawTicket(
   g.addColorStop(0, '#f4e9c9');
   g.addColorStop(1, '#efdcae');
   ctx.fillStyle = g;
-  ctx.beginPath();
-  ctx.roundRect(x, y, w, h, 10);
+  roundedRectPath(ctx, x, y, w, h, 10);
   ctx.fill();
   ctx.strokeStyle = t.borderColor;
   ctx.lineWidth = 3;
@@ -106,8 +106,7 @@ function drawTicket(
   // inner hairline
   ctx.strokeStyle = 'rgba(11, 43, 31, 0.18)';
   ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.roundRect(x + 10, y + 10, w - 20, h - 20, 6);
+  roundedRectPath(ctx, x + 10, y + 10, w - 20, h - 20, 6);
   ctx.stroke();
 
   // pass header inside the body

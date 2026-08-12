@@ -54,7 +54,7 @@
 
 .poster-frame {
   position: relative;
-  width: min(440px, 92vw);
+  width: min(440px, 96vw);
   animation: poster-settle 0.8s cubic-bezier(0.22, 1.15, 0.36, 1) 0.15s both;
 }
 
