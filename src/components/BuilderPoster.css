@@ -1,0 +1,168 @@
+.poster-stage {
+  position: relative;
+  z-index: 3;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 110px 20px 90px;
+  animation: poster-reveal 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes poster-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(26px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.poster-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--cream);
+  padding: 7px 16px;
+  border: 1px solid rgba(246, 238, 217, 0.28);
+  border-radius: 999px;
+  margin-bottom: 34px;
+  text-shadow: 0 1px 3px rgba(4, 20, 14, 0.6);
+}
+
+.poster-eyebrow .pulse {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--coral);
+  box-shadow: 0 0 0 4px rgba(255, 106, 77, 0.25);
+}
+
+.poster-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.poster-frame {
+  position: relative;
+  width: min(440px, 92vw);
+  animation: poster-settle 0.8s cubic-bezier(0.22, 1.15, 0.36, 1) 0.15s both;
+}
+
+@keyframes poster-settle {
+  from {
+    transform: translateY(18px) rotate(0.6deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.poster-canvas-wrap {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  position: relative;
+}
+
+.poster-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 6px;
+  box-shadow:
+    0 44px 90px -32px rgba(0, 0, 0, 0.75),
+    0 10px 24px -10px rgba(0, 0, 0, 0.45),
+    0 2px 0 rgba(246, 238, 217, 0.12);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.poster-canvas.is-ready {
+  opacity: 1;
+}
+
+/* tape-ish corner pieces framing the artifact on the stage */
+.poster-corner {
+  position: absolute;
+  width: 46px;
+  height: 24px;
+  background: rgba(246, 228, 182, 0.75);
+  border-radius: 2px 7px 3px 6px;
+  box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.45);
+  mix-blend-mode: multiply;
+}
+
+.poster-corner--tl {
+  top: -11px;
+  left: 26px;
+  transform: rotate(-10deg);
+}
+
+.poster-corner--br {
+  bottom: -10px;
+  right: 30px;
+  transform: rotate(8deg);
+}
+
+.poster-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--cream);
+  opacity: 0.8;
+}
+
+.poster-meta .dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--mango);
+}
+
+.poster-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.btn-ghost {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 14px;
+  background: transparent;
+  color: var(--cream);
+  border: 1.5px solid rgba(246, 238, 217, 0.45);
+  padding: 14px 26px;
+  border-radius: 100px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-shadow: 0 1px 3px rgba(4, 20, 14, 0.5);
+}
+
+.btn-ghost:hover {
+  border-color: var(--cream);
+  background: rgba(246, 238, 217, 0.12);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}

@@ -1,0 +1,323 @@
+.gen-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  background: rgba(6, 26, 20, 0.55);
+  backdrop-filter: blur(3px);
+  animation: gen-veil 0.3s ease both;
+}
+
+@keyframes gen-veil {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ---- the paper sheet that becomes the poster ---- */
+.gen-sheet {
+  position: relative;
+  width: min(360px, 82vw);
+  aspect-ratio: 4 / 5;
+  background: linear-gradient(165deg, #f6edd2 0%, #efdcae 100%);
+  border-radius: 6px;
+  box-shadow:
+    0 40px 90px -30px rgba(0, 0, 0, 0.7),
+    0 8px 20px -8px rgba(0, 0, 0, 0.4);
+  padding: 34px 30px;
+  color: #0b2b1f;
+  animation: gen-drop 0.6s cubic-bezier(0.22, 1.4, 0.36, 1) 0.06s both, gen-thud 0.32s cubic-bezier(0.3, 1.8, 0.5, 1) 1.22s both;
+  overflow: hidden;
+}
+
+@keyframes gen-drop {
+  from {
+    transform: translateY(74px) scale(0.94) rotate(1.4deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes gen-thud {
+  0% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-4px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.gen-head {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.6;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(11, 43, 31, 0.18);
+}
+
+/* ---- the photo lands ---- */
+.gen-photo {
+  position: relative;
+  width: 62%;
+  aspect-ratio: 4 / 5;
+  margin: 30px auto 0;
+  animation: gen-photo 0.7s cubic-bezier(0.22, 1.2, 0.36, 1) 0.42s both;
+}
+
+.gen-photo__mat {
+  position: absolute;
+  inset: -9px;
+  background: #f0d9a8;
+  border-radius: 3px 8px 4px 7px;
+  transform: rotate(-1.2deg);
+}
+
+.gen-photo img,
+.gen-photo__empty {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(150deg, #fbfcf7 0%, #e9ede3 100%);
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.2em;
+  color: rgba(11, 43, 31, 0.5);
+}
+
+.gen-photo__tape {
+  position: absolute;
+  width: 52px;
+  height: 20px;
+  background: rgba(246, 228, 182, 0.85);
+  border-radius: 2px 6px 3px 5px;
+  box-shadow: 0 2px 5px -1px rgba(40, 25, 5, 0.35);
+  mix-blend-mode: multiply;
+  z-index: 2;
+}
+
+.gen-photo__tape--tl {
+  top: -7px;
+  left: 18px;
+  transform: rotate(-12deg);
+}
+
+.gen-photo__tape--br {
+  bottom: -6px;
+  right: 20px;
+  transform: rotate(9deg);
+}
+
+@keyframes gen-photo {
+  from {
+    transform: scale(1.12) rotate(2deg);
+    filter: brightness(1.3);
+  }
+  to {
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1);
+  }
+}
+
+/* ---- the type rises ---- */
+.gen-name {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(30px, 7.5vw, 40px);
+  line-height: 1.02;
+  text-align: center;
+  margin-top: 26px;
+  animation: gen-rise 0.5s cubic-bezier(0.22, 1.1, 0.36, 1) 0.6s both;
+}
+
+.gen-role {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(15px, 3.6vw, 19px);
+  text-align: center;
+  color: var(--coral);
+  margin-top: 10px;
+  animation: gen-rise 0.5s cubic-bezier(0.22, 1.1, 0.36, 1) 0.74s both;
+}
+
+@keyframes gen-rise {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ---- printed waves slide in ---- */
+.gen-waves {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 21%;
+  animation: gen-rise 0.6s ease 0.9s both;
+}
+
+.gen-waves span {
+  position: absolute;
+  left: -2%;
+  right: -2%;
+  border-radius: 46% 54% 0 0;
+}
+
+.gen-waves .w1 {
+  bottom: 0;
+  height: 72%;
+  background: #0d5b78;
+}
+
+.gen-waves .w2 {
+  bottom: 34%;
+  height: 46%;
+  background: #2a96b8;
+  opacity: 0.9;
+}
+
+.gen-waves .w3 {
+  bottom: 58%;
+  height: 28%;
+  background: #2bb5a9;
+  opacity: 0.85;
+}
+
+.gen-waves .foam {
+  bottom: 62%;
+  height: 5px;
+  background: rgba(246, 246, 236, 0.85);
+  border-radius: 999px;
+  left: 10%;
+  right: 12%;
+}
+
+/* ---- the stamp impacts ---- */
+.gen-stamp {
+  position: absolute;
+  right: 24px;
+  bottom: 30%;
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.18em;
+  color: var(--coral);
+  border: 3px solid var(--coral);
+  border-radius: 50%;
+  width: 86px;
+  height: 86px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  transform: rotate(-9deg);
+  opacity: 0;
+  animation: gen-stamp 0.38s cubic-bezier(0.2, 1.6, 0.4, 1) 1.16s forwards;
+}
+
+@keyframes gen-stamp {
+  0% {
+    transform: rotate(-9deg) scale(2.4);
+    opacity: 0;
+  }
+  55% {
+    transform: rotate(-9deg) scale(0.9);
+    opacity: 0.95;
+  }
+  100% {
+    transform: rotate(-9deg) scale(1);
+    opacity: 0.92;
+  }
+}
+
+/* ---- status line ---- */
+.gen-status {
+  position: relative;
+  height: 22px;
+  font-family: var(--font-hand);
+  font-size: 20px;
+  color: var(--cream);
+  text-align: center;
+}
+
+.gen-status__step {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.gen-status__step--1 {
+  animation: gen-status-1 1.9s linear both;
+}
+
+.gen-status__step--2 {
+  animation: gen-status-2 0.5s ease 1.45s both;
+}
+
+@keyframes gen-status-1 {
+  0% {
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes gen-status-2 {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gen-overlay,
+  .gen-sheet,
+  .gen-photo,
+  .gen-name,
+  .gen-role,
+  .gen-waves,
+  .gen-stamp {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+}

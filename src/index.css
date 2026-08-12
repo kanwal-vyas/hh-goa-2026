@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400;0,6..96,500;0,6..96,600;0,6..96,700;0,6..96,800;1,6..96,400;1,6..96,500;1,6..96,600&family=Space+Grotesk:wght@400;500;600;700&family=Caveat:wght@500;600;700&display=swap');
+
+:root {
+  /* ---- Palette tokens ----
+     deep green: grounding / environmental base
+     cream: large light surfaces + typography contrast
+     mango: primary energy accent
+     coral: secondary energetic accent
+     ocean: major environmental blue — sea is allowed to occupy space
+     turquoise: energetic water accent
+     sand: warm paper / light
+  */
+  --green-deep: #0d3a2c;
+  --green-deep-2: #123f30;
+  --green-ink: #082018;
+  --cream: #f6eed9;
+  --cream-hi: #fcf6e7;
+  --mango: #ffb92e;
+  --mango-2: #ff9b1f;
+  --coral: #ff6a4d;
+  --coral-2: #e84e33;
+  --teal: #12938a;
+  --teal-2: #0c6e67;
+  --teal-light: #5fd6c8;
+  --ocean-deep: #0b4258;
+  --ocean: #12597a;
+  --ocean-bright: #2a96b8;
+  --turquoise: #2bb5a9;
+  --turquoise-bright: #6fdfc9;
+  --sand: #f3e6c6;
+
+  --font-display: 'Bodoni Moda', 'Times New Roman', serif;
+  --font-ui: 'Space Grotesk', sans-serif;
+  --font-hand: 'Caveat', cursive;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--green-deep);
+  color: var(--cream);
+  font-family: var(--font-ui);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  min-height: 100svh;
+}
+
+button {
+  font-family: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  * {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.2s !important;
+  }
+}

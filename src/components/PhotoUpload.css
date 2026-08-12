@@ -1,0 +1,210 @@
+.photo-upload {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+}
+
+.photo-upload__well {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font: inherit;
+  /* the paper object drifts a hair with the cursor, like something on a desk */
+  transform: translate(
+    calc(var(--pointer-x, 0) * 1.6px),
+    calc(var(--pointer-y, 0) * 1.1px)
+  );
+  transition: transform 0.4s ease;
+}
+
+/* ---- warm paper mat behind the photograph ---- */
+.photo-upload__mat {
+  position: absolute;
+  inset: -32px;
+  z-index: 1;
+  background: linear-gradient(158deg, #f7e9c9 0%, #f0d9ac 55%, #e6c68f 100%);
+  border-radius: 3px 9px 4px 8px;
+  box-shadow:
+    0 24px 44px -20px rgba(0, 0, 0, 0.6),
+    0 3px 6px -2px rgba(70, 45, 10, 0.25),
+    inset 0 0 0 1px rgba(122, 92, 40, 0.18);
+  transform: rotate(-1.1deg);
+}
+
+.photo-upload__mat::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  opacity: 0.35;
+  mix-blend-mode: multiply;
+}
+
+/* a small folded corner — paper, not plastic */
+.photo-upload__mat::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 26px;
+  height: 26px;
+  background: linear-gradient(315deg, #dcc08a 0%, #efd9ab 70%);
+  clip-path: polygon(0 0, 100% 100%, 0 100%);
+  filter: drop-shadow(-2px 2px 2px rgba(60, 40, 10, 0.25));
+  border-bottom-left-radius: 6px;
+}
+
+/* ---- the photograph — torn by an SVG displacement mask, not a polygon.
+     The mask tears only the silhouette edge; the photo pixels stay crisp. ---- */
+.photo-upload__frame {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transform: rotate(-1.8deg);
+  /* self-contained torn-paper mask: an SVG whose white rect is displaced
+     by feTurbulence (coarse wavy tear + fine jagged detail). No external
+     defs, no JS sizing — works identically in every modern browser. */
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cfilter id='t' x='-25%25' y='-25%25' width='150%25' height='150%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.03' numOctaves='4' seed='11' result='c'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='c' scale='42' xChannelSelector='R' yChannelSelector='G' result='w'/%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.09 0.14' numOctaves='3' seed='23' result='f'/%3E%3CfeDisplacementMap in='w' in2='f' scale='7' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='white' filter='url(%23t)'/%3E%3C/svg%3E");
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100%25' height='100%25'%3E%3Cfilter id='t' x='-25%25' y='-25%25' width='150%25' height='150%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.03' numOctaves='4' seed='11' result='c'/%3E%3CfeDisplacementMap in='SourceGraphic' in2='c' scale='42' xChannelSelector='R' yChannelSelector='G' result='w'/%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.09 0.14' numOctaves='3' seed='23' result='f'/%3E%3CfeDisplacementMap in='w' in2='f' scale='7' xChannelSelector='R' yChannelSelector='G'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' fill='white' filter='url(%23t)'/%3E%3C/svg%3E");
+  mask-size: 100% 100%;
+  -webkit-mask-size: 100% 100%;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  /* neutral photo paper — deliberately cooler than the warm sand mat, so
+     the torn bites read as warm cream showing through the paper's edge */
+  background:
+    radial-gradient(circle at 32% 22%, rgba(250, 250, 244, 0.7) 0%, transparent 60%),
+    linear-gradient(150deg, #f7f8f3 0%, #e9ede3 100%);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.16),
+    /* tight shadow hugging the torn silhouette — the edge reads as lifted paper */
+    1px 2px 4px rgba(40, 20, 5, 0.3),
+    7px 12px 26px -12px rgba(0, 0, 0, 0.55),
+    /* bright torn-fiber rim following the tear — the photo edge reads as paper */
+    inset 0 0 0 1.5px rgba(255, 252, 240, 0.9),
+    inset 0 0 0 1px rgba(120, 92, 40, 0.14);
+}
+
+.photo-upload__well:hover .photo-upload__frame {
+  transform: rotate(-0.7deg) translateY(-3px);
+}
+
+/* the photo physically settles into the composition when it lands */
+.photo-upload__frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  animation: photo-settle 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes photo-settle {
+  from {
+    transform: scale(1.08) rotate(1.4deg);
+    filter: brightness(1.35) saturate(1.15);
+  }
+  to {
+    transform: scale(1) rotate(0deg);
+    filter: brightness(1) saturate(1);
+  }
+}
+
+/* ---- tiny print-imperfection grain over the photo ---- */
+.photo-upload__grain {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  opacity: 0.16;
+  mix-blend-mode: overlay;
+}
+
+/* ---- small pieces of masking tape — editorial, not crafty ---- */
+.photo-upload__tape {
+  position: absolute;
+  z-index: 4;
+  width: 62px;
+  height: 24px;
+  background: linear-gradient(100deg, rgba(246, 228, 182, 0.85), rgba(238, 216, 166, 0.72));
+  border-radius: 2px 7px 3px 6px;
+  box-shadow: 0 2px 5px -1px rgba(40, 25, 5, 0.35);
+  mix-blend-mode: multiply;
+  opacity: 0.9;
+}
+
+.photo-upload__tape--tl {
+  top: -11px;
+  left: 24px;
+  transform: rotate(-12deg);
+}
+
+.photo-upload__tape--br {
+  bottom: -9px;
+  right: 26px;
+  transform: rotate(9deg);
+}
+
+/* ---- handwritten paper label ---- */
+.photo-upload__label {
+  position: absolute;
+  top: -20px;
+  right: -8px;
+  z-index: 5;
+  background: var(--cream);
+  color: var(--coral);
+  font-family: var(--font-hand);
+  font-weight: 700;
+  font-size: 20px;
+  line-height: 1;
+  padding: 7px 13px 9px;
+  border-radius: 4px 11px 5px 9px;
+  transform: rotate(5deg);
+  border: 1px solid rgba(120, 90, 40, 0.18);
+  box-shadow: 0 5px 12px -4px rgba(0, 0, 0, 0.4);
+}
+
+.photo-upload__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--green-ink);
+  opacity: 0.72;
+  padding: 20px;
+  text-align: center;
+}
+
+.photo-upload__placeholder svg {
+  width: 40px;
+  height: 40px;
+  opacity: 0.8;
+}
+
+.photo-upload__placeholder .p1 {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.photo-upload__placeholder .p2 {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  opacity: 0.75;
+}
+
+.photo-upload__input {
+  display: none;
+}

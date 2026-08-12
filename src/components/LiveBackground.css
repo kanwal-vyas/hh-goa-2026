@@ -1,0 +1,24 @@
+.live-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  --parallax-x: 0px;
+  --parallax-y: 0px;
+}
+
+.live-bg__canvas {
+  position: absolute;
+  inset: -3%;
+  width: 106%;
+  height: 106%;
+  display: block;
+  transform: translate(var(--parallax-x), var(--parallax-y));
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-bg__canvas {
+    transition: none;
+  }
+}
