@@ -296,26 +296,21 @@ export function drawPhoto(
   ctx.lineWidth = 1.5;
   ctx.stroke();
 
-  // the photograph itself — clean rect, object-fit cover
+  // the photograph itself — an organic paper edge (low-frequency wobble,
+  // clearly paper not polygon), object-fit cover inside. The edge is
+  // clipped so only the silhouette is irregular; the photo pixels are
+  // never displaced or distorted.
   ctx.save();
-  ctx.beginPath();
-  ctx.rect(-w / 2, -h / 2, w, h);
+  irregularRectPath(ctx, 0, 0, w, h, p.tearSeed + 7, 5);
   ctx.clip();
   if (img && img.complete && img.naturalWidth > 0) {
-    // cover-crop with a face-safe focal anchor: never stretch, never
-    // distort. Portrait photos anchor toward the upper-middle (where faces
-    // live); a tiny seeded horizontal bias applies only when the photo is
-    // noticeably wider than the frame, so a face can never be pushed out.
+    // perfectly centered cover crop — never stretch, never distort. The
+    // frame is centered at the origin, so the image center must land at
+    // (0, 0): draw its top-left at (-dw/2, -dh/2).
     const scale = Math.max(w / img.naturalWidth, h / img.naturalHeight);
     const dw = img.naturalWidth * scale;
     const dh = img.naturalHeight * scale;
-    const overflowX = dw - w;
-    const overflowY = dh - h;
-    const seedH = (rngX(p.tearSeed, 4242, 1) - 0.5); // -0.5..0.5, deterministic
-    const hBias = overflowX > overflowY * 0.4 ? seedH * 0.16 : 0;
-    const ox = -overflowX * (0.5 + hBias);
-    const oy = -overflowY * 0.36; // faces sit in the upper-middle
-    ctx.drawImage(img, ox, oy, dw, dh);
+    ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
   } else {
     // no photo — print a sun mark in the slot so it never looks empty
     ctx.fillStyle = palette.photoPaper;
@@ -327,14 +322,23 @@ export function drawPhoto(
     ctx.textBaseline = 'middle';
     ctx.fillText('YOUR FACE HERE', 0, 0);
   }
-  // subtle photo paper grain
-  ctx.globalAlpha = 0.06;
-  for (let i = 0; i < 500; i++) {
-    ctx.fillStyle = i % 2 ? '#ffffff' : '#222222';
-    ctx.fillRect(rngX(p.tearSeed, i, w), rngY(p.tearSeed, i, h), 1.2, 1.2);
+  // photo paper grain — multiply so it sits IN the print
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.globalAlpha = 0.12;
+  for (let i = 0; i < 600; i++) {
+    ctx.fillStyle = i % 2 ? '#ffffff' : '#3a3a3a';
+    ctx.fillRect(rngX(p.tearSeed, i, w), rngY(p.tearSeed, i, h), 1.3, 1.3);
   }
   ctx.globalAlpha = 1;
+  ctx.globalCompositeOperation = 'source-over';
   ctx.restore();
+
+  // warm fiber rim along the photo's paper edge — the photo reads as a
+  // physical print, not a cutout
+  ctx.strokeStyle = 'rgba(255, 252, 240, 0.6)';
+  ctx.lineWidth = 2;
+  irregularRectPath(ctx, 0, 0, w, h, p.tearSeed + 7, 5);
+  ctx.stroke();
 
   // tape pieces
   for (const t of p.tape) {

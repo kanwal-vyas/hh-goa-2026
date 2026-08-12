@@ -35,10 +35,21 @@ export function Experience() {
     return () => window.clearTimeout(timerRef.current);
   }, []);
 
-  // The generation reveal lands at the top of the page.
+  // GENERATING: the fixed overlay covers everything, so hold the page at
+  // the compose section. GENERATED: the poster replaces the compose
+  // section below the hero — bring it into view so the user lands on their
+  // finished ID, not back on the hero.
   useEffect(() => {
-    if (state.stage === 'GENERATING' || state.stage === 'GENERATED') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (state.stage === 'GENERATED') {
+      // wait for the poster's reveal animation (0.7s) to settle so the
+      // scroll lands exactly on it instead of overshooting
+      const id = window.setTimeout(() => {
+        document.querySelector('.poster-stage')?.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }, 650);
+      return () => window.clearTimeout(id);
     }
   }, [state.stage]);
 

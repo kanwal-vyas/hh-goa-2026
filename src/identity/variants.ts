@@ -16,13 +16,18 @@ import type { PosterLayout, PosterPalette, VariantId, TapePiece, Mark } from './
 
 const TWO_PI = Math.PI * 2;
 
-function tapeFor(cx: number, cy: number, w: number, h: number, rng: () => number): TapePiece[] {
+/**
+ * Tape pieces are authored relative to the photo CENTER (drawPhoto draws
+ * them inside the photo's translated/rotated context), straddling the
+ * photo's edges so they grip both the print and the mat behind it.
+ */
+function tapeFor(w: number, h: number, rng: () => number): TapePiece[] {
   const pieces: TapePiece[] = [
-    { x: cx - w * 0.34, y: cy - h * 0.34, rotation: -14 + (rng() - 0.5) * 10, w: 84, h: 30 },
-    { x: cx + w * 0.34, y: cy - h * 0.36, rotation: 8 + (rng() - 0.5) * 10, w: 84, h: 30 },
+    { x: -w * 0.3, y: -h / 2, rotation: -14 + (rng() - 0.5) * 10, w: 84, h: 30 },
+    { x: w * 0.3, y: -h / 2, rotation: 8 + (rng() - 0.5) * 10, w: 84, h: 30 },
   ];
   if (rng() > 0.45) {
-    pieces.push({ x: cx + w * 0.3, y: cy + h * 0.38, rotation: 12 + (rng() - 0.5) * 12, w: 78, h: 28 });
+    pieces.push({ x: w * 0.26, y: h / 2, rotation: 12 + (rng() - 0.5) * 12, w: 78, h: 28 });
   }
   return pieces;
 }
@@ -139,11 +144,11 @@ function variantA(rng: () => number, input: Input, palette: PosterPalette): Post
     rotation: -2.2 + (rng() - 0.5) * 1.4,
     matInset: 36,
     tearSeed: Math.floor(rng() * 1e6) + 11,
-    tape: tapeFor(540, 438, 424, 505, rng),
+    tape: tapeFor(424, 505, rng),
     label: {
       text: `you · ${firstName(input.name)}`,
-      x: 762,
-      y: 196,
+      x: 222,
+      y: -242,
       rotation: 5 + (rng() - 0.5) * 6,
       color: palette.accent,
     },
@@ -246,8 +251,8 @@ function variantB(rng: () => number, input: Input, palette: PosterPalette): Post
     rotation: 2.4 + (rng() - 0.5) * 1.2,
     matInset: 32,
     tearSeed: Math.floor(rng() * 1e6) + 23,
-    tape: tapeFor(258, 522, 360, 442, rng),
-    label: { text: 'you', x: 452, y: 316, rotation: -4 + (rng() - 0.5) * 8, color: palette.accent },
+    tape: tapeFor(360, 442, rng),
+    label: { text: 'you', x: 194, y: -206, rotation: -4 + (rng() - 0.5) * 8, color: palette.accent },
   };
 
   const marks: Mark[] = [
@@ -347,8 +352,8 @@ function variantC(rng: () => number, input: Input, palette: PosterPalette): Post
     rotation: -1.4 + (rng() - 0.5) * 1.2,
     matInset: 38,
     tearSeed: Math.floor(rng() * 1e6) + 37,
-    tape: tapeFor(540, 566, 464, 505, rng),
-    label: { text: `you · ${firstName(input.name)}`, x: 778, y: 326, rotation: 5 + (rng() - 0.5) * 6, color: palette.accent },
+    tape: tapeFor(464, 505, rng),
+    label: { text: `you · ${firstName(input.name)}`, x: 238, y: -240, rotation: 5 + (rng() - 0.5) * 6, color: palette.accent },
   };
 
   const marks: Mark[] = [
@@ -445,13 +450,13 @@ function variantD(rng: () => number, input: Input, palette: PosterPalette): Post
   const photo = {
     x: 250,
     y: 470,
-    w: 226,
-    h: 288,
+    w: 250,
+    h: 320,
     rotation: -1.5 + (rng() - 0.5) * 1.4,
     matInset: 26,
     tearSeed: Math.floor(rng() * 1e6) + 53,
-    tape: tapeFor(250, 470, 226, 288, rng).slice(0, 2),
-    label: { text: 'you', x: 388, y: 316, rotation: -4 + (rng() - 0.5) * 8, color: palette.accent },
+    tape: tapeFor(250, 320, rng).slice(0, 2),
+    label: { text: 'you', x: 142, y: -150, rotation: -4 + (rng() - 0.5) * 8, color: palette.accent },
   };
 
   const marks: Mark[] = [
@@ -554,8 +559,8 @@ function variantE(rng: () => number, input: Input, palette: PosterPalette): Post
     rotation: -3 + (rng() - 0.5) * 1.2,
     matInset: 36,
     tearSeed: Math.floor(rng() * 1e6) + 71,
-    tape: tapeFor(322, 452, 428, 468, rng),
-    label: { text: `you · ${firstName(input.name)}`, x: 500, y: 220, rotation: -5 + (rng() - 0.5) * 6, color: palette.accent },
+    tape: tapeFor(428, 468, rng),
+    label: { text: `you · ${firstName(input.name)}`, x: 178, y: -232, rotation: -5 + (rng() - 0.5) * 6, color: palette.accent },
   };
 
   const marks: Mark[] = [
