@@ -48,12 +48,19 @@ interface Crest {
   foamWidth: number;
 }
 
-/** Drawn back → front: deeper crests first, shallower (closer) crests over them. */
+/**
+ * Drawn back → front: deeper crests first, shallower (closer) crests over them.
+ *
+ * Crests are anchored to the full ocean column (fraction of height −
+ * waterTop), not to the visible viewport band — so the field reads as a few
+ * waves on the first screen (the 2–3 crests near the waterline) and grows
+ * denser as you scroll down, exactly like a real sea getting closer.
+ */
 const CRESTS: Crest[] = [
-  { baseFrac: 0.58, ampMult: 1.15, speedMult: 0.7, thickness: 0.5, color: [10, 62, 84], fillAlpha: 0.55, foam: 0.07, foamWidth: 1.4 },
-  { baseFrac: 0.4, ampMult: 1.0, speedMult: 0.95, thickness: 0.34, color: [20, 122, 148], fillAlpha: 0.48, foam: 0.15, foamWidth: 1.7 },
-  { baseFrac: 0.22, ampMult: 0.85, speedMult: 1.25, thickness: 0.24, color: [38, 176, 172], fillAlpha: 0.46, foam: 0.28, foamWidth: 2 },
-  { baseFrac: 0.07, ampMult: 0.7, speedMult: 1.5, thickness: 0.12, color: [66, 204, 190], fillAlpha: 0.42, foam: 0.4, foamWidth: 2.2 },
+  { baseFrac: 0.15, ampMult: 1.2, speedMult: 0.85, thickness: 0.13, color: [10, 62, 84], fillAlpha: 0.55, foam: 0.07, foamWidth: 1.4 },
+  { baseFrac: 0.09, ampMult: 1.05, speedMult: 1.1, thickness: 0.09, color: [22, 122, 148], fillAlpha: 0.5, foam: 0.15, foamWidth: 1.7 },
+  { baseFrac: 0.05, ampMult: 0.9, speedMult: 1.4, thickness: 0.06, color: [44, 180, 176], fillAlpha: 0.47, foam: 0.32, foamWidth: 2.1 },
+  { baseFrac: 0.02, ampMult: 0.75, speedMult: 1.8, thickness: 0.03, color: [90, 224, 206], fillAlpha: 0.42, foam: 0.55, foamWidth: 2.6 },
 ];
 
 export function drawWaveLayer(
@@ -68,15 +75,22 @@ export function drawWaveLayer(
   mobile: boolean,
   sunFrac: number,
   waterTop: number,
+  viewportAnchor: number,
   viewportH: number
 ): void {
+  // The full water column fills from the waterline to the canvas bottom.
+  // Crests are anchored to that whole column (see CRESTS), so only the few
+  // near the waterline show on the first screen and more surface as you
+  // scroll down. Glints, the crossing stroke and the sun reflection stay
+  // pinned to the *visible* band so they're always present.
   const zone = Math.max(1, height - waterTop);
+  const visibleZone = Math.max(1, viewportAnchor + viewportH - waterTop);
   const step = Math.max(7, Math.round(width / (mobile ? 52 : 110)));
 
   const ampFactor = (0.35 + 0.65 * energy) * (1 - settle * 0.5) * (1 + surge * 0.5);
   const speedFactor = (0.4 + 0.6 * energy) * (1 - settle * 0.4) * (1 + surge * 0.3);
   // amplitude scales with the viewport so the sea is alive on every screen
-  const ampBase = Math.max(40, viewportH * 0.09);
+  const ampBase = Math.max(30, viewportH * 0.065);
 
   ctx.save();
 
@@ -134,7 +148,7 @@ export function drawWaveLayer(
 
   // ---- one thin overlapping wave stroke crossing the field ----
   const crossT = timeMs * 0.0005 * speedFactor * 1.1 * seed.flow;
-  const crossBase = waterTop + zone * 0.3;
+  const crossBase = waterTop + visibleZone * 0.3;
   const crossAmp = ampBase * 0.5 * seed.amplitude * ampFactor * (1 + 0.25 * Math.sin(timeMs * 0.0001 + seed.phase));
   ctx.beginPath();
   ctx.moveTo(0, crossBase + crestY(0, width, crossT, seed.phase + 3.1, crossAmp));
@@ -148,7 +162,7 @@ export function drawWaveLayer(
   // ---- sun glints drifting on the front crest (skip on coarse pointers) ----
   if (!mobile) {
     const front = CRESTS[CRESTS.length - 1];
-    const frontBase = waterTop + zone * front.baseFrac;
+    const frontBase = waterTop + visibleZone * front.baseFrac;
     const frontT = timeMs * 0.0005 * speedFactor * front.speedMult * seed.flow;
     const frontAmp = ampBase * front.ampMult * seed.amplitude * ampFactor * (1 + 0.3 * Math.sin(timeMs * 0.00013 * 1.51 + seed.phase * 1.7));
     const glintCount = Math.max(3, Math.round(width / 320));
@@ -168,9 +182,9 @@ export function drawWaveLayer(
   // ---- reflected sunlight: a warm smear on the water near the sun ----
   const reflT = timeMs * 0.0003;
   const rx = width * sunFrac + Math.sin(reflT * 0.8) * width * 0.04;
-  const ry = waterTop + zone * 0.3 + Math.sin(reflT * 1.3 + 2) * 10;
+  const ry = waterTop + visibleZone * 0.3 + Math.sin(reflT * 1.3 + 2) * 10;
   const reflPulse = 0.5 + 0.5 * Math.sin(reflT * 1.1);
-  const reflR = Math.min(width * 0.3, zone * 0.3);
+  const reflR = Math.min(width * 0.3, visibleZone * 0.3);
   const refl = ctx.createRadialGradient(rx, ry, 0, rx, ry, reflR);
   const reflA = (0.12 + 0.08 * reflPulse) * (0.5 + 0.5 * energy) * (1 - settle * 0.4);
   refl.addColorStop(0, `rgba(255, 208, 128, ${reflA})`);

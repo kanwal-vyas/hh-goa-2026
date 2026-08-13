@@ -74,7 +74,7 @@ const ENERGY_LERP_SPEED = 0.0017; // per ms
 const SURGE_DECAY = 0.0011; // per ms — ripple dies off over ~2s
 
 /** The ocean's horizon sits this fraction down the current viewport. */
-const WATERLINE_VIEWPORT_FRAC = 0.68;
+const WATERLINE_VIEWPORT_FRAC = 0.75;
 
 export class LiveEnvironment {
   private renderer: RendererCore | null = null;
@@ -227,10 +227,11 @@ export class LiveEnvironment {
     ctx.fillStyle = base;
     ctx.fillRect(0, 0, w, h);
 
-    drawDappledLightLayer(ctx, w, time, settle, energy, this.dappleFans, waterTop);
-    // anchor = canvas-Y of screen row 0, so the palms are pinned to the
-    // viewport and never drift with scroll
+    // anchor = canvas-Y of screen row 0, so viewport-pinned layers (palms,
+    // birds) never drift with scroll
     const viewportAnchor = this.scrollY - this.canvasTopInDoc;
+
+    drawDappledLightLayer(ctx, w, time, settle, energy, this.dappleFans, waterTop);
     drawSidePalmShadows(ctx, w, time, settle, energy, this.mobile, this.viewportH, viewportAnchor);
     drawSunLightLayer(
       ctx,
@@ -275,6 +276,7 @@ export class LiveEnvironment {
       this.mobile,
       this.sunSeed.cx + this.pointerX * 0.03,
       waterTop,
+      viewportAnchor,
       this.viewportH
     );
   }
