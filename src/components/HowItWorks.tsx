@@ -1,4 +1,5 @@
 import './HowItWorks.css';
+import crabUrl from '../assets/crab.png';
 
 interface HowItWorksProps {
   onScrollToCompose: () => void;
@@ -33,6 +34,11 @@ const STEPS = [
 export function HowItWorks({ onScrollToCompose }: HowItWorksProps) {
   return (
     <section id="how-to-frame" className="how-stage" aria-label="How to frame your Goa">
+      {/* a few tiny crabs scuttling across the sand — atmosphere, not content */}
+      <img className="crab crab--1" src={crabUrl} alt="" draggable={false} />
+      <img className="crab crab--2" src={crabUrl} alt="" draggable={false} />
+      <img className="crab crab--3" src={crabUrl} alt="" draggable={false} />
+
       <div className="how-panel">
         <span className="how-tape how-tape--tl" aria-hidden="true" />
         <span className="how-tape how-tape--br" aria-hidden="true" />

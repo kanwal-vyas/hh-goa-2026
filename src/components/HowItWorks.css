@@ -13,31 +13,102 @@
 
 /* The how-it-works frame lives on warm sunlit sand, not a darkened copy
    of the hero: scrolling from the ocean-green hero into this section,
-   the environment itself shifts — the water gives way to warm sand and
+   the environment itself shifts — the water gives way to a beach and
    the panel sits in a soft patch of afternoon light. The wash ramps in
    from transparent at the seam and fades back out at the bottom, so the
-   shift reads as a gradual change of place, not a light/dark contrast. */
+   shift reads as a gradual change of place, not a light/dark contrast.
+   A fine warm grain rides on top so it reads as sand, not a flat tint. */
 .how-stage::before {
   content: '';
   position: absolute;
   inset: 0;
   background:
+    /* fine warm grain — the paper of the beach */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='11'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 0.66 0 0 0 0 0.55 0 0 0 0 0.38 0 0 0 0.07 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23g)'/%3E%3C/svg%3E")
+      repeat,
     /* a pool of light pooling around the card — it stands in the sun */
     radial-gradient(
-      ellipse 72% 60% at 50% 46%,
-      rgba(248, 233, 197, 0.4) 0%,
-      rgba(248, 233, 197, 0) 72%
+      ellipse 74% 62% at 50% 46%,
+      rgba(255, 244, 214, 0.5) 0%,
+      rgba(255, 244, 214, 0) 70%
     ),
-    /* the water line gives way to sand */
+    /* the water line gives way to sand — lighter at the top, wetter
+       and a touch darker down by the water */
     linear-gradient(
       180deg,
-      rgba(230, 210, 162, 0) 0%,
-      rgba(230, 210, 162, 0.5) 13%,
-      rgba(243, 230, 198, 0.66) 46%,
-      rgba(224, 200, 146, 0.56) 84%,
-      rgba(230, 210, 162, 0) 100%
+      rgba(230, 208, 152, 0) 0%,
+      rgba(238, 218, 170, 0.74) 11%,
+      rgba(248, 232, 188, 0.9) 42%,
+      rgba(237, 214, 162, 0.86) 76%,
+      rgba(222, 194, 138, 0.6) 90%,
+      rgba(230, 208, 152, 0) 100%
     );
   pointer-events: none;
+}
+
+/* ---- a couple of tiny beach-crab walkers on the sand ----
+   Atmosphere only: tiny, scuttling sideways, never near the copy. */
+.crab {
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+  opacity: 0.92;
+  filter: drop-shadow(0 1px 1px rgba(86, 52, 12, 0.35));
+}
+
+.crab--1 {
+  width: 16px;
+  left: 6.5%;
+  top: 5%;
+  animation: crab-scuttle-1 13s ease-in-out infinite;
+}
+
+.crab--2 {
+  width: 12px;
+  right: 6%;
+  top: 31%;
+  animation: crab-scuttle-2 11s ease-in-out 1.6s infinite;
+}
+
+.crab--3 {
+  width: 19px;
+  left: 8%;
+  bottom: 6.5%;
+  animation: crab-scuttle-3 16s ease-in-out 0.7s infinite;
+}
+
+/* each crab scuttles sideways with its own rhythm; the mirrored ones
+   (scaleX(-1)) walk the other way, like crabs really do */
+@keyframes crab-scuttle-1 {
+  0%,
+  100% {
+    transform: translateX(-9px) rotate(9deg);
+  }
+  50% {
+    transform: translateX(9px) rotate(13deg);
+  }
+}
+
+@keyframes crab-scuttle-2 {
+  0%,
+  100% {
+    transform: translateX(7px) rotate(-15deg) scaleX(-1);
+  }
+  50% {
+    transform: translateX(-7px) rotate(-11deg) scaleX(-1);
+  }
+}
+
+@keyframes crab-scuttle-3 {
+  0%,
+  100% {
+    transform: translateX(-12px) rotate(4deg) scaleX(-1);
+  }
+  50% {
+    transform: translateX(12px) rotate(0deg) scaleX(-1);
+  }
 }
 
 .how-panel {
@@ -58,6 +129,10 @@
 @media (prefers-reduced-motion: reduce) {
   .how-panel {
     transform: none;
+  }
+
+  .crab {
+    animation: none;
   }
 }
 
@@ -280,6 +355,25 @@
   .how-panel {
     transform: none;
     padding: 34px 20px 30px;
+  }
+
+  /* the side margins vanish on phones, so keep the crabs in the
+     top/bottom sand bands where they stay visible */
+  .crab--2 {
+    display: none;
+  }
+
+  .crab--1 {
+    width: 12px;
+    left: 8%;
+    top: 4%;
+  }
+
+  .crab--3 {
+    width: 14px;
+    left: auto;
+    right: 8%;
+    bottom: 4%;
   }
 
   .how-hand {
