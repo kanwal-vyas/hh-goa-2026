@@ -70,15 +70,16 @@ const FLOCK_SKY_Y: ReadonlyArray<[number, number]> = [
 const FLOCK_DRIFT: ReadonlyArray<number> = [0.08, Math.PI - 0.1, 0.55];
 
 const DEPTH_CLASSES: Array<{ mid: number; spread: number; count: number }> = [
-  { mid: 0.15, spread: 0.12, count: 12 },
-  { mid: 0.5, spread: 0.16, count: 7 },
-  { mid: 0.85, spread: 0.13, count: 4 },
+  { mid: 0.15, spread: 0.12, count: 14 },
+  { mid: 0.5, spread: 0.16, count: 8 },
+  { mid: 0.85, spread: 0.13, count: 5 },
+  { mid: 1.0, spread: 0.0, count: 3 },
 ];
 
 const MOBILE_DEPTH_CLASSES: Array<{ mid: number; spread: number; count: number }> = [
-  { mid: 0.15, spread: 0.12, count: 6 },
-  { mid: 0.5, spread: 0.16, count: 4 },
-  { mid: 0.85, spread: 0.13, count: 2 },
+  { mid: 0.15, spread: 0.12, count: 8 },
+  { mid: 0.5, spread: 0.16, count: 5 },
+  { mid: 0.85, spread: 0.13, count: 3 },
 ];
 
 export class BirdFlock {
@@ -112,7 +113,7 @@ export class BirdFlock {
           y,
           vx: Math.cos(baseAngle) * baseSpeed,
           vy: Math.sin(baseAngle) * baseSpeed,
-          size: (3.4 + depth * 8.6) * (0.85 + rng() * 0.4),
+          size: (3.2 + depth * 11.6) * (0.85 + rng() * 0.45),
           opacity: Math.min(0.92, 0.4 + depth * 0.52) * (0.88 + rng() * 0.3),
           depth,
           variant: Math.floor(rng() * 4),
