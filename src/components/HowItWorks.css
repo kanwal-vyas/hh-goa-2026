@@ -11,18 +11,32 @@
   padding: 130px 20px 150px;
 }
 
-/* translucent veil so the panel text stays legible while the ocean
-   and palms show through around it */
+/* The how-it-works frame lives on warm sunlit sand, not a darkened copy
+   of the hero: scrolling from the ocean-green hero into this section,
+   the environment itself shifts — the water gives way to warm sand and
+   the panel sits in a soft patch of afternoon light. The wash ramps in
+   from transparent at the seam and fades back out at the bottom, so the
+   shift reads as a gradual change of place, not a light/dark contrast. */
 .how-stage::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(
-    180deg,
-    rgba(6, 26, 20, 0.4) 0%,
-    rgba(6, 26, 20, 0.18) 40%,
-    rgba(6, 26, 20, 0.45) 100%
-  );
+  background:
+    /* a pool of light pooling around the card — it stands in the sun */
+    radial-gradient(
+      ellipse 72% 60% at 50% 46%,
+      rgba(248, 233, 197, 0.4) 0%,
+      rgba(248, 233, 197, 0) 72%
+    ),
+    /* the water line gives way to sand */
+    linear-gradient(
+      180deg,
+      rgba(230, 210, 162, 0) 0%,
+      rgba(230, 210, 162, 0.5) 13%,
+      rgba(243, 230, 198, 0.66) 46%,
+      rgba(224, 200, 146, 0.56) 84%,
+      rgba(230, 210, 162, 0) 100%
+    );
   pointer-events: none;
 }
 

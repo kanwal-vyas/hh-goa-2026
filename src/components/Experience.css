@@ -23,15 +23,19 @@
   padding: 100px 20px 120px;
 }
 
-/* translucent veil so text stays legible while the ocean shows through */
+/* translucent veil so text stays legible while the ocean shows through.
+   Ramps in from transparent at the top edge so the dimming carries over
+   from the how-it-works frame instead of stacking a second hard dark
+   band at the seam. */
 .compose-stage::before {
   content: '';
   position: absolute;
   inset: 0;
   background: linear-gradient(
     180deg,
-    rgba(6, 26, 20, 0.42) 0%,
-    rgba(6, 26, 20, 0.2) 30%,
+    rgba(6, 26, 20, 0) 0%,
+    rgba(6, 26, 20, 0.4) 16%,
+    rgba(6, 26, 20, 0.18) 45%,
     rgba(6, 26, 20, 0.34) 100%
   );
   pointer-events: none;
