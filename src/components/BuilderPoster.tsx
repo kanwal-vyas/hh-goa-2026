@@ -24,7 +24,7 @@ export function BuilderPoster({ identity, photoUrl, onReRoll, onEdit }: BuilderP
   const imgRef = useRef<HTMLImageElement | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [ready, setReady] = useState(false);
-  const [sharing, setSharing] = useState<'idle' | 'copied' | 'download'>('idle');
+  const [sharing, setSharing] = useState<'idle' | 'copied' | 'download' | 'shared'>('idle');
 
   useEffect(() => {
     let cancelled = false;
@@ -83,10 +83,16 @@ export function BuilderPoster({ identity, photoUrl, onReRoll, onEdit }: BuilderP
   };
 
   /**
-   * Share to X: copy the actual PNG to the clipboard (paste it straight
-   * into the composer), then open X with a pre-filled #FrameInGoa caption.
-   * If the clipboard API is unavailable, fall back to downloading the image
-   * alongside the open composer.
+   * Share to X. The poster is a real PNG, so the share flow hands that
+   * actual file over instead of a link:
+   *
+   *  1. Phones — the Web Share API opens the native share sheet with the
+   *     image attached, so X (and every other app) receives the real
+   *     poster, no paste step.
+   *  2. Desktop — X's web composer can't receive image files, so we open
+   *     the intent with a pre-filled #FrameInGoa caption and copy the PNG
+   *     to the clipboard to paste straight into it. If the clipboard API
+   *     is unavailable, download the image alongside the open composer.
    */
   const handleShare = async () => {
     const blob = await renderPosterBlob(identity.layout, imgRef.current);
@@ -97,24 +103,49 @@ export function BuilderPoster({ identity, photoUrl, onReRoll, onEdit }: BuilderP
       '',
       '#FrameInGoa',
     ].join('\n');
+    const intentUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}`;
+    const reset = () => window.setTimeout(() => setSharing('idle'), 4000);
 
-    let copied = false;
-    if (blob && typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
-      try {
-        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-        copied = true;
-      } catch {
-        copied = false;
+    if (blob) {
+      const file = new File([blob], `frame-in-goa-${identity.idNumber}.png`, { type: 'image/png' });
+
+      // 1) Native share with the actual image file attached — the mobile path.
+      if (typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], text: caption });
+          setSharing('shared');
+          reset();
+          return;
+        } catch (err) {
+          // dismissed — don't cascade into downloads or new tabs
+          if (err instanceof DOMException && err.name === 'AbortError') {
+            setSharing('idle');
+            return;
+          }
+          // genuine failure — fall through to the clipboard path
+        }
       }
-    }
-    if (!copied && blob) {
-      await downloadPosterPNG(identity.layout, imgRef.current);
-    }
-    setSharing(copied ? 'copied' : 'download');
-    window.setTimeout(() => setSharing('idle'), 4000);
 
-    const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(caption)}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
+      // 2) Desktop: composer + the PNG on the clipboard, ready to paste.
+      let copied = false;
+      if (typeof ClipboardItem !== 'undefined' && navigator.clipboard?.write) {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          copied = true;
+        } catch {
+          copied = false;
+        }
+      }
+      if (!copied) {
+        await downloadPosterPNG(identity.layout, imgRef.current);
+      }
+      setSharing(copied ? 'copied' : 'download');
+      reset();
+    }
+
+    // no shareable image / native share unavailable — still open the
+    // composer so the caption isn't lost
+    window.open(intentUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -150,7 +181,9 @@ export function BuilderPoster({ identity, photoUrl, onReRoll, onEdit }: BuilderP
               ? 'Image copied — paste into the composer ✓'
               : sharing === 'download'
                 ? 'Image downloaded — attach it on X'
-                : 'Share to X ✳'}
+                : sharing === 'shared'
+                  ? 'Pick X in the share sheet ✓'
+                  : 'Share to X ✳'}
           </button>
           <button className="btn-ghost" onClick={onReRoll}>
             Re-roll
