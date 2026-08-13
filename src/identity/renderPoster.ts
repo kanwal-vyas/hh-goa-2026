@@ -1,6 +1,7 @@
 import type { PosterLayout, PosterPalette, TicketShape } from './types';
 import { createRng } from '../utils/seed';
 import { POSTER_W, POSTER_H } from './design';
+import palmSceneUrl from '../assets/palm-tree.png';
 import {
   drawPaper,
   drawFitText,
@@ -8,7 +9,6 @@ import {
   drawWaves,
   drawShore,
   drawSun,
-  drawPalm,
   drawStamp,
   drawMark,
   drawRegistrationMarks,
@@ -25,17 +25,66 @@ import {
 
 export { POSTER_W, POSTER_H, POSTER_RATIO } from './design';
 
-/** Ensure the poster fonts are ready before first paint. */
+/* The footer palms come from the palm-tree.png illustration (a vector
+   silhouette scene: sun, birds, palm, reeds, dunes) — loaded once and
+   shared by the preview and the export paths. */
+let palmImg: HTMLImageElement | null = null;
+let palmImgPromise: Promise<HTMLImageElement> | null = null;
+
+function loadPalmImage(): Promise<HTMLImageElement> {
+  if (palmImg) return Promise.resolve(palmImg);
+  if (!palmImgPromise) {
+    palmImgPromise = new Promise<HTMLImageElement>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        palmImg = img;
+        resolve(img);
+      };
+      img.onerror = () => reject(new Error('Failed to load palm-tree.png'));
+      img.src = palmSceneUrl;
+    });
+  }
+  return palmImgPromise;
+}
+
+/* The ink-tinted silhouette is pre-rendered once per ink color on an
+   offscreen canvas — where source-in is safe — so the poster canvas is
+   only ever touched with plain source-over draws. */
+let palmSprite: HTMLCanvasElement | null = null;
+let palmSpriteInk = '';
+
+function getPalmSprite(ink: string): HTMLCanvasElement | null {
+  const img = palmImg;
+  if (!img) return null;
+  if (palmSprite && palmSpriteInk === ink) return palmSprite;
+  const c = document.createElement('canvas');
+  c.width = img.naturalWidth;
+  c.height = img.naturalHeight;
+  const x = c.getContext('2d');
+  if (!x) return null;
+  x.drawImage(img, 0, 0);
+  x.globalCompositeOperation = 'source-in';
+  x.fillStyle = ink;
+  x.fillRect(0, 0, c.width, c.height);
+  palmSprite = c;
+  palmSpriteInk = ink;
+  return c;
+}
+
+/** Ensure the poster fonts — and the palm illustration — are ready before paint. */
 export async function loadPosterFonts(): Promise<void> {
-  if (typeof document === 'undefined' || !('fonts' in document)) return;
-  const faces = [
-    '700 100px "Bodoni Moda"',
-    '500 56px "Bodoni Moda"',
-    '600 26px "Space Grotesk"',
-    '700 26px "Space Grotesk"',
-    '700 34px "Caveat"',
-  ];
-  await Promise.all(faces.map((f) => document.fonts.load(f).catch(() => undefined)));
+  const jobs: Array<Promise<unknown>> = [loadPalmImage().catch(() => undefined)];
+  if (typeof document !== 'undefined' && 'fonts' in document) {
+    const faces = [
+      '700 100px "Bodoni Moda"',
+      '500 56px "Bodoni Moda"',
+      '600 26px "Space Grotesk"',
+      '700 26px "Space Grotesk"',
+      '700 34px "Caveat"',
+    ];
+    jobs.push(...faces.map((f) => document.fonts.load(f).catch(() => undefined)));
+  }
+  await Promise.all(jobs);
 }
 
 export function renderPoster(
@@ -63,7 +112,10 @@ export function renderPoster(
   // palms growing from the shore
   drawWaves(ctx, layout.waves, W, H);
   drawShore(ctx, W, H, 1272, layout.waves.seed);
-  for (const pm of layout.palms) drawPalm(ctx, pm, layout.palette.ink, '#8a6a35');
+  const palmSprite = getPalmSprite(layout.palette.ink);
+  if (palmSprite) {
+    for (const pm of layout.palms) drawPalmScene(ctx, palmSprite, pm);
+  }
   if (layout.sun) drawSun(ctx, layout.sun);
 
   // asymmetric pigment block (variant E)
@@ -191,5 +243,32 @@ function drawTicket(
   ctx.fillText('tear here ✂', 0, 0);
   ctx.restore();
 
+  ctx.restore();
+}
+
+/**
+ * Draws the ink-tinted palm illustration on the beach. The layout's palm
+ * marks position the PNG: bottom-center anchored at (x, y) on the sand,
+ * height = h, mirrored when lean points inward. The tint is baked into the
+ * sprite already, so this is a plain source-over draw.
+ */
+function drawPalmScene(
+  ctx: CanvasRenderingContext2D,
+  sprite: HTMLCanvasElement,
+  pm: { x: number; y: number; h: number; lean: number; opacity: number }
+): void {
+  const aspect = sprite.width / sprite.height;
+  const w = pm.h * aspect;
+  const half = w / 2;
+
+  ctx.save();
+  ctx.globalAlpha = pm.opacity;
+  if (pm.lean < 0) {
+    ctx.translate(pm.x + half, pm.y);
+    ctx.scale(-1, 1);
+  } else {
+    ctx.translate(pm.x - half, pm.y);
+  }
+  ctx.drawImage(sprite, 0, -pm.h, w, pm.h);
   ctx.restore();
 }
