@@ -1,36 +1,21 @@
-import type { PosterLayout, PosterPalette, VariantId, TapePiece, Mark } from './types';
+import type { PosterLayout, PosterPalette, TextBlock, VariantId, TapePiece, Mark } from './types';
+import { GRID, SPACING, buildTypoStack, scorePosterLayout } from './layoutEngine';
 
 /**
- * Four composition families, all in the 1080 × 1350 design space, all
- * clearly the same Frame-in-Goa universe:
+ * Five distinct poster composition strategies, all built on the fixed
+ * 1080 × 1350 grid system:
  *
- *   A  Portrait & Type      — big taped portrait, giant centered name below
- *   B  Editorial Offset     — portrait left, large role typography right
- *   C  Type Behind          — giant blue type behind the portrait, wave foreground
- *   D  Ticket / Pass        — a collectible admission pass with perforation
+ *   A  Editorial Side-by-Side — photo left column, typography stack right column
+ *   B  Photo-Led Hero          — large central portrait emphasis, text below
+ *   C  High-Impact Stacked     — giant watermark type, centered photo & text stack
+ *   D  Asymmetric Pass/Ticket  — admission pass with perforation, stub photo, body text
+ *   E  Painterly / Graphic      — pigment stripe accent, offset photo, bold stack
  *
- * The seed picks the variant and drives every detail (rotation, tape,
- * marks, stamp angle, sun position) — the same inputs always produce the
- * same poster, and different builders get visibly different ones.
+ * Seeded RNG drives subtle rotation, texture, and marks, but geometry is
+ * strictly governed by the relational layout engine.
  */
 
 const TWO_PI = Math.PI * 2;
-
-/**
- * Tape pieces are authored relative to the photo CENTER (drawPhoto draws
- * them inside the photo's translated/rotated context), straddling the
- * photo's edges so they grip both the print and the mat behind it.
- */
-function tapeFor(w: number, h: number, rng: () => number): TapePiece[] {
-  const pieces: TapePiece[] = [
-    { x: -w * 0.3, y: -h / 2, rotation: -14 + (rng() - 0.5) * 10, w: 84, h: 30 },
-    { x: w * 0.3, y: -h / 2, rotation: 8 + (rng() - 0.5) * 10, w: 84, h: 30 },
-  ];
-  if (rng() > 0.45) {
-    pieces.push({ x: w * 0.26, y: h / 2, rotation: 12 + (rng() - 0.5) * 12, w: 78, h: 28 });
-  }
-  return pieces;
-}
 
 function firstName(name: string): string {
   return name.split(/\s+/)[0] ?? name;
@@ -56,8 +41,8 @@ function buildBase(
     seed: Math.floor(rng() * 1e9),
     palette,
     headerLeft: {
-      x: 56,
-      y: 74,
+      x: GRID.MARGIN_X,
+      y: GRID.HEADER_Y,
       size: 25,
       rotation: 0,
       align: 'left',
@@ -70,8 +55,8 @@ function buildBase(
       uppercase: true,
     },
     headerRight: {
-      x: 1024,
-      y: 74,
+      x: GRID.W - GRID.MARGIN_X,
+      y: GRID.HEADER_Y,
       size: 25,
       rotation: 0,
       align: 'right',
@@ -85,13 +70,13 @@ function buildBase(
     },
     footer: [
       {
-        x: 56,
-        y: 1308,
+        x: GRID.MARGIN_X,
+        y: GRID.FOOTER_Y,
         size: 22,
         rotation: 0,
         align: 'left',
         anchor: 'baseline',
-        color: palette.inkSoft,
+        color: palette.ink,
         font: 'ui',
         weight: 600,
         maxWidth: 360,
@@ -99,13 +84,13 @@ function buildBase(
         uppercase: true,
       },
       {
-        x: 540,
-        y: 1308,
+        x: GRID.W / 2,
+        y: GRID.FOOTER_Y,
         size: 22,
         rotation: 0,
         align: 'center',
         anchor: 'baseline',
-        color: palette.inkSoft,
+        color: palette.ink,
         font: 'ui',
         weight: 600,
         maxWidth: 420,
@@ -113,8 +98,8 @@ function buildBase(
         uppercase: true,
       },
       {
-        x: 1024,
-        y: 1308,
+        x: GRID.W - GRID.MARGIN_X,
+        y: GRID.FOOTER_Y,
         size: 22,
         rotation: 0,
         align: 'right',
@@ -130,245 +115,248 @@ function buildBase(
   };
 }
 
+/**
+ * Anchors the hand-drawn underline directly beneath the name block — below
+ * the last line's baseline, centered on the measured text — so it always
+ * hugs the name instead of drifting into the middle of the type or floating
+ * off to one side.
+ */
+function nameUnderline(nameBlock: TextBlock): { x: number; y: number; w: number } {
+  const lines = nameBlock.lines ?? [nameBlock.text ?? ''];
+  const lh = nameBlock.lineHeight ?? nameBlock.size * 1.05;
+  const lastBaseline = nameBlock.y + (Math.max(1, lines.length) - 1) * lh;
+  const width = Math.max(140, (nameBlock.maxLineWidth ?? nameBlock.maxWidth) * 0.92);
+  const x =
+    nameBlock.align === 'left'
+      ? nameBlock.x + width / 2
+      : nameBlock.align === 'right'
+        ? nameBlock.x - width / 2
+        : nameBlock.x;
+  return { x, y: lastBaseline + Math.max(14, lh * 0.24), w: width };
+}
+
+function generateTape(w: number, h: number, rng: () => number): TapePiece[] {
+  const pieces: TapePiece[] = [
+    { x: -w * 0.3, y: -h / 2 - 2, rotation: -12 + (rng() - 0.5) * 8, w: 84, h: 28 },
+    { x: w * 0.3, y: -h / 2 - 2, rotation: 10 + (rng() - 0.5) * 8, w: 84, h: 28 },
+  ];
+  if (rng() > 0.45) {
+    pieces.push({ x: w * 0.26, y: h / 2 + 2, rotation: 12 + (rng() - 0.5) * 10, w: 78, h: 26 });
+  }
+  return pieces;
+}
+
 /* ------------------------------------------------------------------ */
-/* Variant A — Portrait & Type                                         */
+/* Variant A — Editorial Side-by-Side                                  */
 /* ------------------------------------------------------------------ */
 
 function variantA(rng: () => number, input: Input, palette: PosterPalette): PosterLayout {
   const base = buildBase(rng, 'A', palette);
+
+  // Photo in Left Column (Center X = 267)
+  const photoW = 370;
+  const photoH = 450;
+  const photoX = GRID.COL_LEFT.center;
+  const photoY = 430;
+
   const photo = {
-    x: 540,
-    y: 438,
-    w: 424,
-    h: 505,
-    rotation: -2.2 + (rng() - 0.5) * 1.4,
-    matInset: 36,
+    x: photoX,
+    y: photoY,
+    w: photoW,
+    h: photoH,
+    rotation: -1.8 + (rng() - 0.5) * 1.2,
+    matInset: 32,
     tearSeed: Math.floor(rng() * 1e6) + 11,
-    tape: tapeFor(424, 505, rng),
+    tape: generateTape(photoW, photoH, rng),
     label: {
       text: `you · ${firstName(input.name)}`,
-      x: 222,
-      y: -242,
+      x: photoW * 0.22,
+      y: -photoH / 2 - 20,
+      rotation: 4 + (rng() - 0.5) * 6,
+      color: palette.accent,
+    },
+  };
+
+  // Typography Stack in Right Column (X = 510, width = 490, Left aligned)
+  const stack = buildTypoStack({
+    name: { text: input.name, initialSize: 104, minSize: 60 },
+    role: { text: input.role, initialSize: 44, minSize: 28, italic: true },
+    title: { text: input.title, initialSize: 40, minSize: 26 },
+    align: 'left',
+    x: GRID.COL_RIGHT.x,
+    startY: 300,
+    maxWidth: GRID.COL_RIGHT.w - 16,
+    maxAvailableHeight: 630,
+  });
+
+  const marks: Mark[] = [
+    {
+      kind: 'underline',
+      ...nameUnderline(stack.nameBlock),
+      rotation: 0,
+      color: palette.accent,
+    },
+    {
+      kind: 'arrow',
+      x: photoX + photoW / 2 - 20,
+      y: photoY - photoH / 2 - 20,
+      rotation: -25,
+      length: 100,
+      color: palette.accent2,
+    },
+  ];
+
+  if (rng() > 0.5) {
+    marks.push({ kind: 'star', x: 190, y: 170, r: 24, rotation: rng() * 20, color: palette.accent });
+  }
+
+  return {
+    ...base,
+    name: input.name,
+    role: input.role,
+    title: input.title,
+    idNumber: input.idNumber,
+    nameBlock: stack.nameBlock,
+    roleBlock: stack.roleBlock,
+    titleBlock: stack.titleBlock,
+    photo,
+    waves: { y: 1200, colors: [palette.ocean, palette.oceanLight, palette.turquoise], amp: 45, seed: rng() * TWO_PI },
+    sun: { x: 920, y: 150, r: 76, color: palette.sun, rays: 12, seed: rng() * TWO_PI },
+    palms: [
+      { x: 90, y: 1290, h: 170, seed: 3, lean: 1, opacity: 0.85 },
+      { x: 990, y: 1290, h: 160, seed: 7, lean: -1, opacity: 0.85 },
+    ],
+    stamp: { x: photoX + photoW / 2 + 26, y: photoY + photoH / 2 + 10, r: 58, rotation: -8 + (rng() - 0.5) * 8, color: palette.accent, text1: 'BUILDER', text2: 'LOCKED' },
+    marks,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Variant B — Photo-Led Hero                                         */
+/* ------------------------------------------------------------------ */
+
+function variantB(rng: () => number, input: Input, palette: PosterPalette): PosterLayout {
+  const base = buildBase(rng, 'B', palette);
+
+  // Photo top center
+  const photoW = 400;
+  const photoH = 440;
+  const photoX = GRID.COL_CENTER.center;
+  const photoY = 370;
+
+  const photo = {
+    x: photoX,
+    y: photoY,
+    w: photoW,
+    h: photoH,
+    rotation: 1.8 + (rng() - 0.5) * 1.2,
+    matInset: 34,
+    tearSeed: Math.floor(rng() * 1e6) + 23,
+    tape: generateTape(photoW, photoH, rng),
+    label: {
+      text: `you · ${firstName(input.name)}`,
+      x: photoW * 0.25,
+      y: -photoH / 2 - 20,
+      rotation: -4 + (rng() - 0.5) * 6,
+      color: palette.accent,
+    },
+  };
+
+  // Stack centered below photo
+  const stack = buildTypoStack({
+    name: { text: input.name, initialSize: 104, minSize: 60 },
+    role: { text: input.role, initialSize: 44, minSize: 28, italic: true },
+    title: { text: input.title, initialSize: 40, minSize: 26 },
+    align: 'center',
+    x: GRID.COL_CENTER.center,
+    startY: photoY + photoH / 2 + SPACING.md,
+    maxWidth: GRID.COL_CENTER.w,
+    maxAvailableHeight: GRID.SAFE_CONTENT_BOTTOM - (photoY + photoH / 2 + SPACING.md),
+  });
+
+  const marks: Mark[] = [
+    {
+      kind: 'underline',
+      ...nameUnderline(stack.nameBlock),
+      rotation: 0,
+      color: palette.accent,
+    },
+  ];
+
+  if (rng() > 0.5) {
+    marks.push({ kind: 'star', x: 540, y: 150, r: 24, rotation: rng() * 30, color: palette.accent });
+  }
+
+  return {
+    ...base,
+    name: input.name,
+    role: input.role,
+    title: input.title,
+    idNumber: input.idNumber,
+    nameBlock: stack.nameBlock,
+    roleBlock: stack.roleBlock,
+    titleBlock: stack.titleBlock,
+    photo,
+    waves: { y: 1200, colors: [palette.ocean, palette.oceanLight, palette.turquoise], amp: 45, seed: rng() * TWO_PI },
+    sun: { x: 160, y: 150, r: 80, color: palette.sun, rays: 12, seed: rng() * TWO_PI },
+    palms: [
+      { x: 96, y: 1290, h: 170, seed: 5, lean: 1, opacity: 0.85 },
+      { x: 984, y: 1290, h: 160, seed: 9, lean: -1, opacity: 0.85 },
+    ],
+    stamp: { x: photoX + photoW / 2 + 20, y: photoY + photoH / 2 - 10, r: 56, rotation: 8 + (rng() - 0.5) * 8, color: palette.accent, text1: 'HH GOA', text2: '2026' },
+    marks,
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Variant C — High-Impact Stacked                                    */
+/* ------------------------------------------------------------------ */
+
+function variantC(rng: () => number, input: Input, palette: PosterPalette): PosterLayout {
+  const base = buildBase(rng, 'C', palette);
+
+  const photoW = 400;
+  const photoH = 440;
+  const photoX = GRID.COL_CENTER.center;
+  const photoY = 400;
+
+  const photo = {
+    x: photoX,
+    y: photoY,
+    w: photoW,
+    h: photoH,
+    rotation: -1.2 + (rng() - 0.5) * 1.0,
+    matInset: 36,
+    tearSeed: Math.floor(rng() * 1e6) + 37,
+    tape: generateTape(photoW, photoH, rng),
+    label: {
+      text: `you · ${firstName(input.name)}`,
+      x: photoW * 0.24,
+      y: -photoH / 2 - 20,
       rotation: 5 + (rng() - 0.5) * 6,
       color: palette.accent,
     },
   };
 
-  const marks: Mark[] = [
-    {
-      kind: 'underline',
-      x: 540,
-      y: 1178,
-      w: 520,
-      rotation: 0,
-      color: palette.accent,
-    },
-    {
-      kind: 'arrow',
-      x: 862,
-      y: 546,
-      rotation: -24,
-      length: 158,
-      color: palette.accent2,
-    },
-  ];
-  if (rng() > 0.5) {
-    marks.push({ kind: 'star', x: 218, y: 200, r: 26, rotation: rng() * 20, color: palette.accent });
-  }
-  if (rng() > 0.6) {
-    marks.push({ kind: 'scribble', x: 400, y: 1100, w: 120, rotation: -4, color: palette.inkSoft });
-  }
-
-  return {
-    ...base,
-    name: input.name,
-    role: input.role,
-    title: input.title,
-    idNumber: input.idNumber,
-    nameBlock: {
-      x: 540,
-      y: 1030,
-      size: 152,
-      rotation: 0,
-      align: 'center',
-      anchor: 'baseline',
-      color: palette.ink,
-      font: 'display',
-      weight: 700,
-      maxWidth: 1000,
-      maxLines: 2,
-    },
-    roleBlock: {
-      x: 540,
-      y: 1128,
-      size: 56,
-      rotation: 0,
-      align: 'center',
-      anchor: 'baseline',
-      color: palette.accent,
-      font: 'display',
-      italic: true,
-      weight: 500,
-      maxWidth: 920,
-      maxLines: 1,
-    },
-    titleBlock: {
-      x: 320,
-      y: 736,
-      size: 46,
-      rotation: -3,
-      align: 'left',
-      anchor: 'baseline',
-      color: palette.ink,
-      font: 'hand',
-      weight: 700,
-      maxWidth: 380,
-      maxLines: 1,
-    },
-    photo,
-    waves: { y: 1194, colors: [palette.ocean, palette.oceanLight, palette.turquoise], amp: 64, seed: rng() * TWO_PI },
-    sun: { x: 150, y: 152, r: 92, color: palette.sun, rays: 12, seed: rng() * TWO_PI },
-    palms: [
-      { x: 96, y: 1172, h: 190, seed: 3, lean: 1, opacity: 0.85 },
-      { x: 984, y: 1172, h: 158, seed: 7, lean: -1, opacity: 0.85 },
-    ],
-    stamp: { x: 712, y: 736, r: 62, rotation: -8 + (rng() - 0.5) * 8, color: palette.accent, text1: 'BUILDER', text2: 'LOCKED' },
-    marks,
-  };
-}
-
-/* ------------------------------------------------------------------ */
-/* Variant B — Editorial Offset                                        */
-/* ------------------------------------------------------------------ */
-
-function variantB(rng: () => number, input: Input, palette: PosterPalette): PosterLayout {
-  const base = buildBase(rng, 'B', palette);
-  const photo = {
-    x: 258,
-    y: 522,
-    w: 360,
-    h: 442,
-    rotation: 2.4 + (rng() - 0.5) * 1.2,
-    matInset: 32,
-    tearSeed: Math.floor(rng() * 1e6) + 23,
-    tape: tapeFor(360, 442, rng),
-    label: { text: 'you', x: 194, y: -206, rotation: -4 + (rng() - 0.5) * 8, color: palette.accent },
-  };
+  const stack = buildTypoStack({
+    name: { text: input.name, initialSize: 110, minSize: 64 },
+    role: { text: input.role, initialSize: 46, minSize: 28, italic: true },
+    title: { text: input.title, initialSize: 42, minSize: 26 },
+    align: 'center',
+    x: GRID.COL_CENTER.center,
+    startY: photoY + photoH / 2 + SPACING.md,
+    maxWidth: GRID.COL_CENTER.w,
+    maxAvailableHeight: GRID.SAFE_CONTENT_BOTTOM - (photoY + photoH / 2 + SPACING.md),
+  });
 
   const marks: Mark[] = [
     {
       kind: 'underline',
-      x: 652,
-      y: 706,
-      w: 380,
-      rotation: 0,
-      color: palette.accent,
-    },
-    {
-      kind: 'arrow',
-      x: 640,
-      y: 560,
-      rotation: 168,
-      length: 150,
-      color: palette.accent2,
-    },
-  ];
-  if (rng() > 0.55) {
-    marks.push({ kind: 'star', x: 540, y: 250, r: 24, rotation: rng() * 30, color: palette.accent });
-  }
-  if (rng() > 0.6) {
-    marks.push({ kind: 'scribble', x: 700, y: 980, w: 130, rotation: -6, color: palette.inkSoft });
-  }
-
-  return {
-    ...base,
-    name: input.name,
-    role: input.role,
-    title: input.title,
-    idNumber: input.idNumber,
-    nameBlock: {
-      x: 648,
-      y: 566,
-      size: 128,
-      rotation: 0,
-      align: 'left',
-      anchor: 'baseline',
-      color: palette.ink,
-      font: 'display',
-      weight: 700,
-      maxWidth: 470,
-      maxLines: 3,
-    },
-    roleBlock: {
-      x: 648,
-      y: 660,
-      size: 50,
-      rotation: 0,
-      align: 'left',
-      anchor: 'baseline',
-      color: palette.accent,
-      font: 'display',
-      italic: true,
-      weight: 500,
-      maxWidth: 460,
-      maxLines: 2,
-    },
-    titleBlock: {
-      x: 648,
-      y: 796,
-      size: 46,
-      rotation: -1.5,
-      align: 'left',
-      anchor: 'baseline',
-      color: palette.ink,
-      font: 'hand',
-      weight: 700,
-      maxWidth: 420,
-      maxLines: 1,
-    },
-    photo,
-    waves: { y: 1194, colors: [palette.ocean, palette.oceanLight, palette.turquoise], amp: 62, seed: rng() * TWO_PI },
-    sun: { x: 932, y: 148, r: 74, color: palette.sun, rays: 10, seed: rng() * TWO_PI },
-    palms: [
-      { x: 96, y: 1172, h: 200, seed: 5, lean: 1, opacity: 0.85 },
-      { x: 984, y: 1172, h: 166, seed: 9, lean: -1, opacity: 0.85 },
-    ],
-    stamp: { x: 790, y: 402, r: 58, rotation: 9 + (rng() - 0.5) * 8, color: palette.accent, text1: 'HH GOA', text2: '2026' },
-    marks,
-  };
-}
-
-/* ------------------------------------------------------------------ */
-/* Variant C — Type Behind                                             */
-/* ------------------------------------------------------------------ */
-
-function variantC(rng: () => number, input: Input, palette: PosterPalette): PosterLayout {
-  const base = buildBase(rng, 'C', palette);
-  const photo = {
-    x: 540,
-    y: 566,
-    w: 464,
-    h: 505,
-    rotation: -1.4 + (rng() - 0.5) * 1.2,
-    matInset: 38,
-    tearSeed: Math.floor(rng() * 1e6) + 37,
-    tape: tapeFor(464, 505, rng),
-    label: { text: `you · ${firstName(input.name)}`, x: 238, y: -240, rotation: 5 + (rng() - 0.5) * 6, color: palette.accent },
-  };
-
-  const marks: Mark[] = [
-    {
-      kind: 'underline',
-      x: 540,
-      y: 1212,
-      w: 500,
+      ...nameUnderline(stack.nameBlock),
       rotation: 0,
       color: palette.accent,
     },
   ];
-  if (rng() > 0.5) {
-    marks.push({ kind: 'star', x: 240, y: 290, r: 24, rotation: rng() * 30, color: palette.accent });
-  }
 
   return {
     ...base,
@@ -377,101 +365,89 @@ function variantC(rng: () => number, input: Input, palette: PosterPalette): Post
     title: input.title,
     idNumber: input.idNumber,
     ghost: {
-      x: 540,
-      y: 700,
-      size: 236,
-      rotation: -3 + (rng() - 0.5) * 3,
+      x: GRID.COL_CENTER.center,
+      y: 340,
+      size: 160,
+      rotation: -2,
       align: 'center',
       anchor: 'middle',
-      color: 'rgba(42, 150, 184, 0.30)',
+      color: 'rgba(42, 150, 184, 0.16)',
       font: 'display',
       weight: 800,
-      maxWidth: 1020,
-      maxLines: 2,
-    },
-    nameBlock: {
-      x: 540,
-      y: 1082,
-      size: 140,
-      rotation: 0,
-      align: 'center',
-      anchor: 'baseline',
-      color: palette.ink,
-      font: 'display',
-      weight: 700,
       maxWidth: 1000,
-      maxLines: 2,
-    },
-    roleBlock: {
-      x: 540,
-      y: 1166,
-      size: 52,
-      rotation: 0,
-      align: 'center',
-      anchor: 'baseline',
-      color: palette.accent,
-      font: 'display',
-      italic: true,
-      weight: 500,
-      maxWidth: 900,
       maxLines: 1,
     },
-    titleBlock: {
-      x: 178,
-      y: 340,
-      size: 46,
-      rotation: -2,
-      align: 'left',
-      anchor: 'baseline',
-      color: palette.ink,
-      font: 'hand',
-      weight: 700,
-      maxWidth: 400,
-      maxLines: 1,
-    },
+    nameBlock: stack.nameBlock,
+    roleBlock: stack.roleBlock,
+    titleBlock: stack.titleBlock,
     photo,
-    waves: { y: 1232, colors: [palette.ocean, palette.oceanLight, palette.turquoise], amp: 74, seed: rng() * TWO_PI },
-    sun: { x: 168, y: 168, r: 100, color: palette.sun, rays: 12, seed: rng() * TWO_PI },
+    waves: { y: 1200, colors: [palette.ocean, palette.oceanLight, palette.turquoise], amp: 45, seed: rng() * TWO_PI },
+    sun: { x: 920, y: 160, r: 84, color: palette.sun, rays: 12, seed: rng() * TWO_PI },
     palms: [
-      { x: 92, y: 1208, h: 190, seed: 4, lean: 1, opacity: 0.85 },
-      { x: 988, y: 1208, h: 158, seed: 8, lean: -1, opacity: 0.85 },
+      { x: 92, y: 1290, h: 175, seed: 4, lean: 1, opacity: 0.85 },
+      { x: 988, y: 1290, h: 155, seed: 8, lean: -1, opacity: 0.85 },
     ],
-    stamp: { x: 348, y: 796, r: 60, rotation: -6 + (rng() - 0.5) * 8, color: palette.accent, text1: 'GOA', text2: '2026' },
+    stamp: { x: photoX - photoW / 2 - 20, y: photoY + photoH / 2 - 10, r: 56, rotation: -6 + (rng() - 0.5) * 8, color: palette.accent, text1: 'GOA', text2: '2026' },
     marks,
   };
 }
 
 /* ------------------------------------------------------------------ */
-/* Variant D — Ticket / Pass                                           */
+/* Variant D — Asymmetric Pass / Ticket                               */
 /* ------------------------------------------------------------------ */
 
 function variantD(rng: () => number, input: Input, palette: PosterPalette): PosterLayout {
   const base = buildBase(rng, 'D', palette);
+
+  const ticketX = 84;
+  const ticketY = 160;
+  const ticketW = 912;
+  const ticketH = 880;
+  const stubW = 330;
+
+  // Photo inside left stub
+  const photoW = 240;
+  const photoH = 300;
+  const photoX = ticketX + stubW / 2;
+  const photoY = ticketY + 250;
+
   const photo = {
-    x: 250,
-    y: 470,
-    w: 250,
-    h: 320,
-    rotation: -1.5 + (rng() - 0.5) * 1.4,
-    matInset: 26,
+    x: photoX,
+    y: photoY,
+    w: photoW,
+    h: photoH,
+    rotation: -1.5 + (rng() - 0.5) * 1.0,
+    matInset: 24,
     tearSeed: Math.floor(rng() * 1e6) + 53,
-    tape: tapeFor(250, 320, rng).slice(0, 2),
-    label: { text: 'you', x: 142, y: -150, rotation: -4 + (rng() - 0.5) * 8, color: palette.accent },
+    tape: generateTape(photoW, photoH, rng).slice(0, 2),
+    label: { text: 'you', x: photoW * 0.28, y: -photoH / 2 - 16, rotation: -4 + (rng() - 0.5) * 8, color: palette.accent },
   };
+
+  // Stack in right ticket body
+  const bodyX = ticketX + stubW + 40;
+  const bodyW = ticketW - stubW - 60;
+  const stack = buildTypoStack({
+    name: { text: input.name, initialSize: 90, minSize: 54 },
+    role: { text: input.role, initialSize: 38, minSize: 26, italic: true },
+    title: { text: input.title, initialSize: 36, minSize: 24 },
+    align: 'left',
+    x: bodyX,
+    startY: ticketY + 160,
+    maxWidth: bodyW,
+    maxAvailableHeight: 560,
+  });
 
   const marks: Mark[] = [
     {
       kind: 'underline',
-      x: 560,
-      y: 606,
-      w: 340,
+      ...nameUnderline(stack.nameBlock),
       rotation: 0,
       color: palette.accent,
     },
     {
       kind: 'star',
-      x: 700,
-      y: 830,
+      x: bodyX + bodyW - 40,
+      y: ticketY + 140,
       r: 22,
       rotation: rng() * 30,
       color: palette.accent,
@@ -484,94 +460,76 @@ function variantD(rng: () => number, input: Input, palette: PosterPalette): Post
     role: input.role,
     title: input.title,
     idNumber: input.idNumber,
-    nameBlock: {
-      x: 560,
-      y: 470,
-      size: 96,
-      rotation: 0,
-      align: 'left',
-      anchor: 'baseline',
-      color: palette.ink,
-      font: 'display',
-      weight: 700,
-      maxWidth: 540,
-      maxLines: 2,
-    },
-    roleBlock: {
-      x: 560,
-      y: 566,
-      size: 42,
-      rotation: 0,
-      align: 'left',
-      anchor: 'baseline',
-      color: palette.accent,
-      font: 'display',
-      italic: true,
-      weight: 500,
-      maxWidth: 500,
-      maxLines: 2,
-    },
-    titleBlock: {
-      x: 560,
-      y: 660,
-      size: 38,
-      rotation: -1,
-      align: 'left',
-      anchor: 'baseline',
-      color: palette.ink,
-      font: 'hand',
-      weight: 700,
-      maxWidth: 440,
-      maxLines: 1,
-    },
+    nameBlock: stack.nameBlock,
+    roleBlock: stack.roleBlock,
+    titleBlock: stack.titleBlock,
     photo,
-    waves: { y: 1216, colors: [palette.ocean, palette.oceanLight, palette.turquoise], amp: 60, seed: rng() * TWO_PI },
-    sun: { x: 940, y: 132, r: 76, color: palette.sun, rays: 10, seed: rng() * TWO_PI },
+    waves: { y: 1200, colors: [palette.ocean, palette.oceanLight, palette.turquoise], amp: 45, seed: rng() * TWO_PI },
+    sun: { x: 920, y: 140, r: 76, color: palette.sun, rays: 10, seed: rng() * TWO_PI },
     palms: [
-      { x: 92, y: 1196, h: 180, seed: 6, lean: 1, opacity: 0.85 },
-      { x: 988, y: 1196, h: 150, seed: 10, lean: -1, opacity: 0.85 },
+      { x: 92, y: 1290, h: 170, seed: 6, lean: 1, opacity: 0.85 },
+      { x: 988, y: 1290, h: 150, seed: 10, lean: -1, opacity: 0.85 },
     ],
-    stamp: { x: 806, y: 872, r: 58, rotation: 8 + (rng() - 0.5) * 8, color: palette.accent, text1: 'ADMIT', text2: 'BUILDER' },
+    stamp: { x: ticketX + ticketW - 90, y: ticketY + ticketH - 120, r: 56, rotation: 8 + (rng() - 0.5) * 8, color: palette.accent, text1: 'ADMIT', text2: 'BUILDER' },
     marks,
     ticket: {
-      x: 84,
-      y: 196,
-      w: 912,
-      h: 952,
-      perforationY: 700,
-      stubWidth: 330,
+      x: ticketX,
+      y: ticketY,
+      w: ticketW,
+      h: ticketH,
+      perforationY: ticketY + ticketH - 120,
+      stubWidth: stubW,
       borderColor: 'rgba(11, 43, 31, 0.55)',
     },
   };
 }
 
 /* ------------------------------------------------------------------ */
-/* Variant E — Asymmetric / strong graphics                            */
+/* Variant E — Painterly / Graphic                                     */
 /* ------------------------------------------------------------------ */
 
 function variantE(rng: () => number, input: Input, palette: PosterPalette): PosterLayout {
   const base = buildBase(rng, 'E', palette);
+
+  const photoW = 370;
+  const photoH = 430;
+  const photoX = 290;
+  const photoY = 390;
+
   const photo = {
-    x: 322,
-    y: 452,
-    w: 428,
-    h: 468,
-    rotation: -3 + (rng() - 0.5) * 1.2,
-    matInset: 36,
+    x: photoX,
+    y: photoY,
+    w: photoW,
+    h: photoH,
+    rotation: -2.5 + (rng() - 0.5) * 1.0,
+    matInset: 34,
     tearSeed: Math.floor(rng() * 1e6) + 71,
-    tape: tapeFor(428, 468, rng),
-    label: { text: `you · ${firstName(input.name)}`, x: 178, y: -232, rotation: -5 + (rng() - 0.5) * 6, color: palette.accent },
+    tape: generateTape(photoW, photoH, rng),
+    label: {
+      text: `you · ${firstName(input.name)}`,
+      x: photoW * 0.22,
+      y: -photoH / 2 - 20,
+      rotation: -5 + (rng() - 0.5) * 6,
+      color: palette.accent,
+    },
   };
 
+  const stack = buildTypoStack({
+    name: { text: input.name, initialSize: 104, minSize: 60 },
+    role: { text: input.role, initialSize: 44, minSize: 28, font: 'hand', italic: false },
+    title: { text: input.title, initialSize: 40, minSize: 26, font: 'display' },
+    align: 'center',
+    x: GRID.COL_CENTER.center,
+    startY: photoY + photoH / 2 + SPACING.md,
+    maxWidth: GRID.COL_CENTER.w,
+    maxAvailableHeight: GRID.SAFE_CONTENT_BOTTOM - (photoY + photoH / 2 + SPACING.md),
+  });
+
+  // no arrow here — a floating hand-arrow with nothing to point at reads as
+  // noise, so variant E keeps only the star sparkle
   const marks: Mark[] = [
-    { kind: 'arrow', x: 300, y: 300, rotation: -32, length: 190, color: palette.accent2 },
-    { kind: 'arrow', x: 880, y: 640, rotation: 150, length: 170, color: palette.accent2 },
-    { kind: 'star', x: 620, y: 240, r: 28, rotation: rng() * 30, color: palette.accent },
-    { kind: 'star', x: 980, y: 500, r: 20, rotation: rng() * 30, color: palette.sun },
+    { kind: 'star', x: 620, y: 170, r: 26, rotation: rng() * 30, color: palette.accent },
   ];
-  if (rng() > 0.4) {
-    marks.push({ kind: 'scribble', x: 640, y: 1160, w: 150, rotation: -8, color: palette.inkSoft });
-  }
 
   return {
     ...base,
@@ -579,59 +537,23 @@ function variantE(rng: () => number, input: Input, palette: PosterPalette): Post
     role: input.role,
     title: input.title,
     idNumber: input.idNumber,
-    nameBlock: {
-      x: 540,
-      y: 990,
-      size: 150,
-      rotation: -1.2,
-      align: 'center',
-      anchor: 'baseline',
-      color: palette.ink,
-      font: 'display',
-      weight: 700,
-      maxWidth: 1020,
-      maxLines: 2,
-    },
-    roleBlock: {
-      x: 540,
-      y: 1082,
-      size: 62,
-      rotation: 0,
-      align: 'center',
-      anchor: 'baseline',
-      color: palette.ink,
-      font: 'hand',
-      weight: 700,
-      maxWidth: 900,
-      maxLines: 1,
-    },
-    titleBlock: {
-      x: 740,
-      y: 330,
-      size: 52,
-      rotation: 4,
-      align: 'left',
-      anchor: 'baseline',
-      color: palette.accent,
-      font: 'hand',
-      weight: 700,
-      maxWidth: 380,
-      maxLines: 1,
-    },
+    nameBlock: stack.nameBlock,
+    roleBlock: stack.roleBlock,
+    titleBlock: stack.titleBlock,
     photo,
-    waves: { y: 1194, colors: [palette.ocean, palette.oceanLight, palette.turquoise], amp: 68, seed: rng() * TWO_PI },
-    sun: { x: 938, y: 208, r: 128, color: palette.sun, rays: 14, seed: rng() * TWO_PI },
+    waves: { y: 1200, colors: [palette.ocean, palette.oceanLight, palette.turquoise], amp: 45, seed: rng() * TWO_PI },
+    sun: { x: 920, y: 180, r: 100, color: palette.sun, rays: 14, seed: rng() * TWO_PI },
     palms: [
-      { x: 96, y: 1172, h: 186, seed: 13, lean: 1, opacity: 0.85 },
-      { x: 984, y: 1172, h: 152, seed: 17, lean: -1, opacity: 0.85 },
+      { x: 96, y: 1290, h: 170, seed: 13, lean: 1, opacity: 0.85 },
+      { x: 984, y: 1290, h: 150, seed: 17, lean: -1, opacity: 0.85 },
     ],
-    stamp: { x: 252, y: 806, r: 70, rotation: -10 + (rng() - 0.5) * 8, color: palette.accent, text1: 'BUILDER', text2: 'ID' },
+    stamp: { x: photoX - photoW / 2 - 20, y: photoY + photoH / 2 - 10, r: 56, rotation: -10 + (rng() - 0.5) * 8, color: palette.accent, text1: 'BUILDER', text2: 'ID' },
     marks,
     paint: {
-      x: 300,
-      y: 1030,
+      x: GRID.COL_CENTER.center,
+      y: stack.nameBlock.y - (stack.nameBlock.lineHeight ?? 60) * 0.35,
       w: 780,
-      h: 150,
+      h: 110,
       rotation: -1.2,
       color: palette.sun,
       seed: 91,
@@ -641,7 +563,7 @@ function variantE(rng: () => number, input: Input, palette: PosterPalette): Post
 }
 
 /* ------------------------------------------------------------------ */
-/* entry                                                               */
+/* Entry Point                                                         */
 /* ------------------------------------------------------------------ */
 
 export function buildVariant(
@@ -668,6 +590,16 @@ export function buildVariant(
   layout.footer[1].text = '28–31 Oct 2026';
   layout.footer[2].text = '#FrameInGoa';
   layout.ghostText = layout.ghost ? ghostNameFor(layout) : undefined;
+
+  // Validate poster layout quality
+  const scoreResult = scorePosterLayout(layout);
+  if (!scoreResult.valid) {
+    // Emergency scale adjustment for safe area compliance
+    layout.nameBlock.size *= 0.9;
+    layout.roleBlock.size *= 0.9;
+    layout.titleBlock.size *= 0.9;
+  }
+
   return layout;
 }
 

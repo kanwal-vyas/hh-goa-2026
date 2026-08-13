@@ -5,6 +5,7 @@ import { Hero } from './Hero';
 import { PhotoUpload } from './PhotoUpload';
 import { GeneratingPanel } from './GeneratingPanel';
 import { BuilderPoster } from './BuilderPoster';
+import { HowItWorks } from './HowItWorks';
 import {
   experienceReducer,
   initialExperienceState,
@@ -111,8 +112,13 @@ export function Experience() {
         <LiveBackground stage={state.stage} seed={state.seed} />
 
         <section className="hero-stage">
-          <Hero onScrollToCompose={() => composeRef.current?.scrollIntoView({ behavior: 'smooth' })} />
+          <Hero
+            onScrollToCompose={() => composeRef.current?.scrollIntoView({ behavior: 'smooth' })}
+            onScrollToHow={() => document.getElementById('how-to-frame')?.scrollIntoView({ behavior: 'smooth' })}
+          />
         </section>
+
+        <HowItWorks onScrollToCompose={() => composeRef.current?.scrollIntoView({ behavior: 'smooth' })} />
 
         {state.stage === 'GENERATED' && state.identity ? (
           <BuilderPoster

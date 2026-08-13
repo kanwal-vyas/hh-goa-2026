@@ -2,9 +2,10 @@ import './Hero.css';
 
 interface HeroProps {
   onScrollToCompose: () => void;
+  onScrollToHow: () => void;
 }
 
-export function Hero({ onScrollToCompose }: HeroProps) {
+export function Hero({ onScrollToCompose, onScrollToHow }: HeroProps) {
   return (
     <div className="hero-inner">
       {/* print-language SVG filter: turns the GOA block into rough applied ink */}
@@ -67,24 +68,9 @@ export function Hero({ onScrollToCompose }: HeroProps) {
         <button className="btn-primary" onClick={onScrollToCompose}>
           Create Your Frame &#8594;
         </button>
-        <div className="hand-tag">
-          it's basically <span>sunlight you can wear</span>
-        </div>
-      </div>
-
-      <div className="type-strip">
-        <div className="type-cell">
-          <div className="label">Display &middot; Bodoni Moda</div>
-          <div className="sample-display">Hacker House</div>
-        </div>
-        <div className="type-cell">
-          <div className="label">UI &middot; Space Grotesk</div>
-          <div className="sample-ui">GOA, INDIA · OCT 2026</div>
-        </div>
-        <div className="type-cell">
-          <div className="label">Accent &middot; Caveat</div>
-          <div className="sample-hand">locked &amp; loaded ✦</div>
-        </div>
+        <a className="hand-tag" href="#how-to-frame" onClick={(e) => { e.preventDefault(); onScrollToHow(); }}>
+          it's basically <span>sunlight you can build</span>
+        </a>
       </div>
     </div>
   );

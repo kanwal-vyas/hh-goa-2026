@@ -180,10 +180,38 @@
   position: relative;
   z-index: 1;
   text-shadow: 0 1px 2px rgba(6, 26, 20, 0.55);
+  text-decoration: none;
+  cursor: var(--cursor-spark);
+  transition: opacity 0.2s ease;
 }
 
 .hand-tag span {
   color: var(--mango);
+}
+
+/* a hand-drawn underline appears when it's pointed at — it links to
+   HOW IT WORKS below, so the squiggle reads as "follow this" */
+.hand-tag::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: -4px;
+  height: 8px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 8' preserveAspectRatio='none'%3E%3Cpath d='M4 5 C 60 1, 110 7, 160 4 S 200 3, 216 4' fill='none' stroke='%23ffb92e' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.hand-tag:hover {
+  opacity: 1;
+}
+
+.hand-tag:hover::after {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 /* ---- the annotation arrow — anchored to the GOA block it points at.
@@ -225,56 +253,6 @@
   }
 }
 
-.type-strip {
-  display: flex;
-  flex-wrap: wrap;
-  border-top: 1px solid rgba(246, 238, 217, 0.14);
-  border-bottom: 1px solid rgba(246, 238, 217, 0.14);
-  margin-top: 70px;
-  position: relative;
-  z-index: 1;
-}
-
-.type-cell {
-  flex: 1 1 220px;
-  padding: 20px clamp(18px, 3vw, 40px);
-  border-right: 1px solid rgba(246, 238, 217, 0.12);
-  text-align: left;
-}
-
-.type-cell:last-child {
-  border-right: none;
-}
-
-.type-cell .label {
-  font-family: var(--font-ui);
-  font-size: 10.5px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  opacity: 0.72;
-  margin-bottom: 10px;
-}
-
-.type-cell .sample-display {
-  font-family: var(--font-display);
-  font-size: 26px;
-  color: var(--cream-hi);
-}
-
-.type-cell .sample-ui {
-  font-family: var(--font-ui);
-  font-weight: 600;
-  font-size: 15px;
-  letter-spacing: 0.02em;
-  color: var(--mango);
-}
-
-.type-cell .sample-hand {
-  font-family: var(--font-hand);
-  font-size: 24px;
-  color: var(--coral);
-}
-
 @media (max-width: 900px) and (min-width: 641px) {
   .goa-chip .goa-arrow {
     width: 92px;
@@ -294,14 +272,4 @@
     margin-top: -24px;
   }
 
-  .type-strip {
-    flex-direction: column;
-  }
-  .type-cell {
-    border-right: none;
-    border-bottom: 1px solid rgba(246, 238, 217, 0.12);
-  }
-  .type-cell:last-child {
-    border-bottom: none;
-  }
 }

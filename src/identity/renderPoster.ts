@@ -6,6 +6,7 @@ import {
   drawFitText,
   drawPhoto,
   drawWaves,
+  drawShore,
   drawSun,
   drawPalm,
   drawStamp,
@@ -57,9 +58,12 @@ export function renderPoster(
     drawFitText(ctx, layout.ghostText, layout.ghost);
   }
 
-  // printed sea + palms + sun (drawn under the content objects)
+  // printed sea + sandy shore + palms + sun (drawn under the content
+  // objects) — the footer reads as a beach: ocean above, sand below,
+  // palms growing from the shore
   drawWaves(ctx, layout.waves, W, H);
-  for (const pm of layout.palms) drawPalm(ctx, pm, layout.palette.ink);
+  drawShore(ctx, W, H, 1272, layout.waves.seed);
+  for (const pm of layout.palms) drawPalm(ctx, pm, layout.palette.ink, '#8a6a35');
   if (layout.sun) drawSun(ctx, layout.sun);
 
   // asymmetric pigment block (variant E)
@@ -77,16 +81,29 @@ export function renderPoster(
   // header + footer bands
   drawFitText(ctx, layout.headerLeft.text ?? '', layout.headerLeft);
   drawFitText(ctx, layout.headerRight.text ?? '', layout.headerRight);
+  // the footer sits on the beach — solid ink plus a soft shadow so it
+  // always separates from the sand and sea behind it
+  ctx.save();
+  ctx.shadowColor = 'rgba(11, 43, 31, 0.3)';
+  ctx.shadowBlur = 6;
+  ctx.shadowOffsetY = 2;
   for (const f of layout.footer) drawFitText(ctx, f.text ?? '', f);
+  ctx.restore();
 
   // the photograph — a physical object on the paper
   drawPhoto(ctx, layout.photo, layout.palette, img);
 
   // the typographic voice — name + role are the heroes, the builder title
-  // is the handwritten accent
+  // is the handwritten accent; a soft ink shadow keeps the delicate
+  // high-contrast display type readable against the paper
+  ctx.save();
+  ctx.shadowColor = 'rgba(11, 43, 31, 0.32)';
+  ctx.shadowBlur = 7;
+  ctx.shadowOffsetY = 2;
   drawFitText(ctx, layout.name, layout.nameBlock);
   drawFitText(ctx, layout.role, layout.roleBlock);
   drawFitText(ctx, layout.title, layout.titleBlock);
+  ctx.restore();
 
   // stamp + hand marks
   drawStamp(ctx, layout.stamp);

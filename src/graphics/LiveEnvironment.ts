@@ -41,6 +41,7 @@ import {
   createDappleFans,
   type DappleFan,
 } from './layers/DappledLightLayer';
+import { createBirdFlock, type BirdFlock } from './layers/BirdLayer';
 import { createRng } from '../utils/seed';
 import type { Stage } from '../state/experienceState';
 
@@ -81,6 +82,7 @@ export class LiveEnvironment {
   private sunSeed: SunSeed;
   private palmPhase: number;
   private dappleFans: DappleFan[];
+  private birdFlock: BirdFlock;
   private settleCurrent = 0;
   private settleTarget = 0;
   private energyCurrent = 0.5;
@@ -111,6 +113,7 @@ export class LiveEnvironment {
     this.palmPhase = rng() * TWO_PI;
     this.dappleFans = createDappleFans(rng);
     this.mobile = isCoarsePointer();
+    this.birdFlock = createBirdFlock(rng, this.mobile);
     this.reducedMotion =
       typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
@@ -173,6 +176,7 @@ export class LiveEnvironment {
     };
     this.palmPhase = rng() * TWO_PI;
     this.dappleFans = createDappleFans(rng);
+    this.birdFlock = createBirdFlock(rng, this.mobile);
   }
 
   destroy(): void {
@@ -241,6 +245,23 @@ export class LiveEnvironment {
       this.pointerY,
       waterTop
     );
+    // a distant flock lives in the sky — same single loop, no extra
+    // requestAnimationFrame, no React, no DOM. It follows the viewport so
+    // the air feels continuous from the hero through the sections below.
+    if (!this.reducedMotion) {
+      this.birdFlock.update({
+        width: w,
+        viewportHeight: this.viewportH,
+        anchorY: viewportAnchor,
+        timeMs: info.time,
+        delta: info.delta,
+        settle,
+        energy,
+        pointerX: this.pointerX,
+        pointerY: this.pointerY,
+      });
+    }
+    this.birdFlock.draw(ctx, w, this.viewportH, viewportAnchor, time, this.reducedMotion);
     drawPalmSilhouettes(ctx, w, h, time, settle, this.palmPhase, this.mobile);
     drawWaveLayer(
       ctx,

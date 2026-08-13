@@ -53,6 +53,10 @@ export interface TextBlock {
   maxLines?: number;
   letterSpacing?: number; // px, caps tracking for UI text
   uppercase?: boolean;
+  lines?: string[]; // pre-computed wrapped lines
+  measuredHeight?: number; // pre-computed total block height
+  lineHeight?: number; // pre-computed per-line height
+  maxLineWidth?: number; // measured width of the widest wrapped line
 }
 
 export interface TapePiece {

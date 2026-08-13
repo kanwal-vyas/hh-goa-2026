@@ -143,6 +143,15 @@
 }
 
 /* ---- the type rises ---- */
+/* The name and role stay FORWARD of the printed waves: the wave strip is
+   absolutely positioned scenery that slides in behind the sheet, so the
+   type must paint above it (it would otherwise be run over by the sea). */
+.gen-name,
+.gen-role {
+  position: relative;
+  z-index: 1;
+}
+
 .gen-name {
   font-family: var(--font-display);
   font-weight: 700;
@@ -226,6 +235,8 @@
   position: absolute;
   right: 24px;
   bottom: 30%;
+  /* the stamp is a physical ink mark — it sits above the waves and the type */
+  z-index: 2;
   font-family: var(--font-ui);
   font-weight: 700;
   font-size: 13px;

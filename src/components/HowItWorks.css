@@ -1,0 +1,300 @@
+/* ------------------------------------------------------------------ *
+ * HOW IT WORKS — editorial instruction panel
+ * Festival-poster language, not a SaaS grid: giant Bodoni numerals,
+ * stitched rules, Caveat hand notes, tape at the corners, paper panel
+ * floating over the living environment behind it.
+ * ------------------------------------------------------------------ */
+
+.how-stage {
+  position: relative;
+  z-index: 1;
+  padding: 130px 20px 150px;
+}
+
+/* translucent veil so the panel text stays legible while the ocean
+   and palms show through around it */
+.how-stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(6, 26, 20, 0.4) 0%,
+    rgba(6, 26, 20, 0.18) 40%,
+    rgba(6, 26, 20, 0.45) 100%
+  );
+  pointer-events: none;
+}
+
+.how-panel {
+  position: relative;
+  max-width: 1020px;
+  margin: 0 auto;
+  background: linear-gradient(165deg, var(--cream-hi) 0%, var(--cream) 55%, #efe2c0 100%);
+  color: var(--green-ink);
+  border: 1.5px solid rgba(8, 32, 24, 0.75);
+  box-shadow:
+    0 2px 0 rgba(8, 32, 24, 0.9),
+    0 26px 60px -18px rgba(3, 16, 11, 0.65);
+  padding: clamp(36px, 5vw, 72px) clamp(24px, 4.5vw, 64px) clamp(32px, 4vw, 56px);
+  /* a hair of hand-placed imperfection */
+  transform: rotate(-0.35deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .how-panel {
+    transform: none;
+  }
+}
+
+/* ---- tape at two corners ---- */
+.how-tape {
+  position: absolute;
+  width: 110px;
+  height: 30px;
+  background: rgba(255, 185, 46, 0.55);
+  border-left: 1px dashed rgba(8, 32, 24, 0.25);
+  border-right: 1px dashed rgba(8, 32, 24, 0.25);
+  box-shadow: 0 2px 6px rgba(8, 32, 24, 0.18);
+}
+
+.how-tape--tl {
+  top: -14px;
+  left: 8%;
+  transform: rotate(-4deg);
+}
+
+.how-tape--br {
+  bottom: -14px;
+  right: 7%;
+  transform: rotate(3deg);
+}
+
+/* ---- header ---- */
+.how-head {
+  position: relative;
+  padding-bottom: 30px;
+  margin-bottom: clamp(30px, 4vw, 46px);
+}
+
+.how-head::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: min(320px, 70%);
+  height: 16px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 320 16' preserveAspectRatio='none'%3E%3Cpath d='M6 12 C 60 5, 120 13, 180 9 S 280 7, 314 9' fill='none' stroke='%23e84e33' stroke-width='3.2' stroke-linecap='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.how-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--green-ink);
+  border: 1px solid rgba(8, 32, 24, 0.35);
+  border-radius: 999px;
+  padding: 6px 14px;
+  margin-bottom: 18px;
+}
+
+.how-kicker::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--mango);
+  box-shadow: 0 0 0 4px rgba(255, 185, 46, 0.35);
+}
+
+.how-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: clamp(34px, 5vw, 60px);
+  line-height: 1.02;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.how-hand {
+  position: absolute;
+  right: 0;
+  bottom: 34px;
+  font-family: var(--font-hand);
+  font-size: clamp(19px, 2.4vw, 25px);
+  color: var(--coral-2);
+  transform: rotate(-2deg);
+  white-space: nowrap;
+}
+
+/* ---- the three steps: asymmetric editorial columns ---- */
+.how-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(20px, 3vw, 40px);
+  align-items: start;
+}
+
+.how-step {
+  position: relative;
+  border-top: 1.5px solid rgba(8, 32, 24, 0.4);
+  padding-top: 18px;
+}
+
+/* hand-drawn zig-zag divider instead of a clean rule */
+.how-step::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: 0;
+  width: 46px;
+  height: 9px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 46 9'%3E%3Cpath d='M1 6 L 7 3 L 13 6 L 19 3 L 25 6 L 31 3 L 37 6 L 43 3' fill='none' stroke='%23ff6a4d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+/* asymmetry: step two sits lower, step three higher — a relaxed,
+   hand-set rhythm rather than an aligned card row */
+.how-step:nth-child(2) {
+  transform: translateY(26px);
+}
+
+.how-step:nth-child(3) {
+  transform: translateY(-8px);
+}
+
+.how-num {
+  display: block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(58px, 7vw, 96px);
+  line-height: 0.9;
+  color: rgba(8, 32, 24, 0.12);
+  -webkit-text-stroke: 1.5px var(--green-ink);
+  letter-spacing: -0.02em;
+  margin-bottom: 10px;
+}
+
+.how-step-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: clamp(21px, 2.2vw, 27px);
+  line-height: 1.1;
+  margin: 0 0 8px;
+  padding-right: 34px; /* room for the hand note */
+}
+
+.how-note {
+  position: absolute;
+  top: 6px;
+  right: 0;
+  font-family: var(--font-hand);
+  font-size: 17px;
+  color: var(--coral-2);
+  transform: rotate(2.5deg);
+}
+
+.how-step-body {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(8, 32, 24, 0.78);
+  margin: 0;
+  max-width: 30ch;
+}
+
+/* ---- footer / CTA ---- */
+.how-foot {
+  margin-top: clamp(34px, 4.5vw, 54px);
+  padding-top: 26px;
+  border-top: 1.5px solid rgba(8, 32, 24, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+}
+
+.how-cta {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  background: var(--coral);
+  color: var(--cream-hi);
+  border: 1.5px solid var(--coral-2);
+  border-radius: 100px;
+  padding: 15px 30px;
+  cursor: pointer;
+  box-shadow:
+    0 4px 0 var(--coral-2),
+    0 14px 28px -10px rgba(232, 78, 51, 0.55);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.how-cta:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 6px 0 var(--coral-2),
+    0 18px 32px -10px rgba(232, 78, 51, 0.6);
+}
+
+.how-foot-hand {
+  font-family: var(--font-hand);
+  font-size: 21px;
+  color: var(--teal-2);
+  transform: rotate(-1.5deg);
+}
+
+/* ---- responsive: stack into a loose single column ---- */
+@media (max-width: 760px) {
+  .how-stage {
+    padding: 90px 14px 110px;
+  }
+
+  .how-panel {
+    transform: none;
+    padding: 34px 20px 30px;
+  }
+
+  .how-hand {
+    position: static;
+    display: block;
+    margin-top: 6px;
+    transform: rotate(-2deg);
+  }
+
+  .how-steps {
+    grid-template-columns: 1fr;
+    gap: 34px;
+  }
+
+  .how-step:nth-child(2),
+  .how-step:nth-child(3) {
+    transform: none;
+  }
+
+  .how-note {
+    top: 4px;
+  }
+
+  .how-step-title {
+    padding-right: 0;
+  }
+
+  .how-foot {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

@@ -114,34 +114,39 @@ export function drawFitText(ctx: CanvasRenderingContext2D, text: string, block: 
   ctx.textAlign = block.align;
   ctx.textBaseline = 'alphabetic';
 
-  // The block's maxWidth is relative to its anchor; clamp it to the design
-  // space so left/right/center blocks can never bleed past the paper edge.
+  // The block's maxWidth is relative to its anchor; clamp it to the design space
   const avail =
     block.align === 'left'
       ? POSTER_W - block.x
       : block.align === 'right'
         ? block.x
         : 2 * Math.min(block.x, POSTER_W - block.x);
-  // keep type off the very edge — the registration marks sit at 26px
   const maxWidth = Math.max(40, Math.min(block.maxWidth, avail - 28));
 
   let size = block.size;
-  let lines = [''];
-  for (let attempt = 0; attempt < 14; attempt++) {
-    setFont(ctx, block.font, size, block.weight ?? 500, block.italic ?? false);
-    applyTracking(ctx, block.letterSpacing);
-    lines = wrapLines(ctx, raw, maxWidth);
-    const fitsLines = lines.length <= maxLines;
-    const fitsWidth = lines.every((l) => ctx.measureText(l).width <= maxWidth + 1);
-    if (fitsLines && fitsWidth) break;
-    size *= 0.92;
+  let lines = block.lines ?? [''];
+
+  if (!block.lines || block.lines.length === 0) {
+    for (let attempt = 0; attempt < 14; attempt++) {
+      setFont(ctx, block.font, size, block.weight ?? 500, block.italic ?? false);
+      applyTracking(ctx, block.letterSpacing);
+      lines = wrapLines(ctx, raw, maxWidth);
+      const fitsLines = lines.length <= maxLines;
+      const fitsWidth = lines.every((l) => ctx.measureText(l).width <= maxWidth + 1);
+      if (fitsLines && fitsWidth) break;
+      size *= 0.92;
+    }
   }
+
   setFont(ctx, block.font, size, block.weight ?? 500, block.italic ?? false);
   applyTracking(ctx, block.letterSpacing);
-  lines = wrapLines(ctx, raw, maxWidth).slice(0, maxLines);
 
-  const lh = size * (block.font === 'hand' ? 1.25 : block.italic ? 1.08 : 1.02);
-  const totalH = lines.length * lh;
+  if (!block.lines) {
+    lines = wrapLines(ctx, raw, maxWidth).slice(0, maxLines);
+  }
+
+  const lh = block.lineHeight ?? size * (block.font === 'hand' ? 1.25 : block.italic ? 1.08 : 1.02);
+  const totalH = block.measuredHeight ?? lines.length * lh;
   const startY = block.anchor === 'middle' ? -totalH / 2 + lh * 0.8 : 0;
 
   ctx.fillStyle = block.color;
@@ -398,22 +403,27 @@ function rngY(seed: number, i: number, h: number): number {
  */
 export function drawWaves(ctx: CanvasRenderingContext2D, band: WaveBand, w: number, h: number): void {
   const layers = band.colors.length;
+  // Enforce environmental zone boundary: wave crests never reach above Y = 1085
+  const clampedBandY = Math.max(1180, band.y);
+  const clampedAmp = Math.min(48, band.amp);
+
   for (let li = 0; li < layers; li++) {
     const color = band.colors[li];
-    const baseY = band.y - li * (band.amp * 0.55);
-    const amp = band.amp * (1 + li * 0.18);
+    const baseY = clampedBandY - li * (clampedAmp * 0.45);
+    const amp = clampedAmp * (1 + li * 0.15);
     ctx.beginPath();
     ctx.moveTo(0, h);
     ctx.lineTo(0, baseY);
-    const N = 14;
+    const N = 16;
     for (let i = 0; i <= N; i++) {
       const x = (i / N) * w;
       const t = i / N;
-      const y =
+      const rawY =
         baseY -
-        Math.sin(t * Math.PI * 2 + band.seed) * amp * 0.55 -
-        Math.sin(t * Math.PI * 4 + band.seed * 1.7) * amp * 0.28 -
-        amp * 0.15;
+        Math.sin(t * Math.PI * 2 + band.seed) * amp * 0.45 -
+        Math.sin(t * Math.PI * 4 + band.seed * 1.7) * amp * 0.22 -
+        amp * 0.1;
+      const y = Math.max(1090, rawY);
       ctx.lineTo(x, y);
     }
     ctx.lineTo(w, h);
@@ -425,15 +435,81 @@ export function drawWaves(ctx: CanvasRenderingContext2D, band: WaveBand, w: numb
   ctx.strokeStyle = 'rgba(246, 246, 236, 0.8)';
   ctx.lineWidth = 3;
   ctx.lineCap = 'round';
-  const topY = band.y - (layers - 1) * (band.amp * 0.55) - band.amp * 0.7;
+  const topY = Math.max(1085, clampedBandY - (layers - 1) * (clampedAmp * 0.45) - clampedAmp * 0.5);
   ctx.beginPath();
   for (let i = 0; i <= 24; i++) {
     const x = (i / 24) * w;
-    const y = topY - Math.sin(i * 0.55 + band.seed * 2) * 9;
+    const y = Math.max(1082, topY - Math.sin(i * 0.55 + band.seed * 2) * 7);
     if (i === 0) ctx.moveTo(x, y);
     else ctx.lineTo(x, y);
   }
   ctx.stroke();
+}
+
+/* ------------------------------------------------------------------ */
+/* Beach shoreline                                                     */
+/* ------------------------------------------------------------------ */
+
+/**
+ * The sandy foreground of the beach — a warm tan band that runs from a
+ * gently undulating shoreline down to the bottom edge, with a pale
+ * waterline where the sea meets the sand. It is drawn over the lower part
+ * of the wave fill so the poster's footer reads as a proper beach: ocean
+ * above, sand below, palms growing from the shore.
+ */
+export function drawShore(
+  ctx: CanvasRenderingContext2D,
+  w: number,
+  h: number,
+  topY: number,
+  seed: number
+): void {
+  const N = 20;
+  const shoreY = (t: number) =>
+    topY - Math.sin(t * Math.PI * 2 + seed) * 6 - Math.sin(t * Math.PI * 5 + seed * 1.7) * 3;
+
+  // sand fill — lighter at the wet shoreline, deepening toward the bottom
+  const g = ctx.createLinearGradient(0, topY, 0, h);
+  g.addColorStop(0, '#eed9a5');
+  g.addColorStop(0.5, '#e9cf97');
+  g.addColorStop(1, '#dfbe80');
+  ctx.beginPath();
+  ctx.moveTo(0, h);
+  ctx.lineTo(0, shoreY(0));
+  for (let i = 0; i <= N; i++) {
+    ctx.lineTo((i / N) * w, shoreY(i / N));
+  }
+  ctx.lineTo(w, h);
+  ctx.closePath();
+  ctx.fillStyle = g;
+  ctx.fill();
+
+  // pale waterline right at the shore
+  ctx.strokeStyle = 'rgba(246, 246, 236, 0.9)';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  for (let i = 0; i <= N; i++) {
+    const x = (i / N) * w;
+    const y = shoreY(i / N);
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+
+  // a touch of damp-sand shading just below the waterline
+  ctx.globalAlpha = 0.16;
+  ctx.strokeStyle = '#8a6a35';
+  ctx.lineWidth = 7;
+  ctx.beginPath();
+  for (let i = 0; i <= N; i++) {
+    const x = (i / N) * w;
+    const y = shoreY(i / N) + 12;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.globalAlpha = 1;
 }
 
 /* ------------------------------------------------------------------ */
@@ -475,58 +551,107 @@ function shade(hex: string, amt: number): string {
 }
 
 /* ------------------------------------------------------------------ */
-/* Palm silhouette (printed)                                           */
+/* Palm tree (printed)                                                 */
 /* ------------------------------------------------------------------ */
 
 /**
- * Compact printed palm silhouette: a curved trunk plus a small fan of
- * sawtooth blades — the same anatomy as the live background palms, reduced
- * to a solid ink mark.
+ * A printed palm that reads as a palm, not an umbrella: a warm brown
+ * segmented trunk that leans from the sand, a drooping fan of fronds
+ * (the tips arc downward past the crown, like a real coconut palm) and
+ * a small coconut cluster tucked under the crown.
  */
-export function drawPalm(ctx: CanvasRenderingContext2D, pm: PalmMark, color: string): void {
+export function drawPalm(
+  ctx: CanvasRenderingContext2D,
+  pm: PalmMark,
+  frondColor: string,
+  trunkColor: string
+): void {
   ctx.save();
   ctx.globalAlpha = pm.opacity;
   ctx.translate(pm.x, pm.y);
   const h = pm.h;
-  const lean = pm.lean * h * 0.22;
+  const lean = pm.lean * h * 0.24;
   const crownX = lean;
   const crownY = -h;
+  const p1x = lean * 0.55;
+  const p1y = -h * 0.55;
+  const p2x = crownX;
+  const p2y = crownY;
 
-  // trunk
-  ctx.strokeStyle = color;
-  ctx.lineWidth = h * 0.06;
+  // trunk — a curved warm-brown stem, thicker at the base
+  ctx.strokeStyle = trunkColor;
+  ctx.lineWidth = h * 0.075;
   ctx.lineCap = 'round';
   ctx.beginPath();
   ctx.moveTo(0, 0);
-  ctx.quadraticCurveTo(lean * 0.55, -h * 0.52, crownX, crownY);
+  ctx.quadraticCurveTo(p1x, p1y, p2x, p2y);
   ctx.stroke();
 
-  // frond blades
-  ctx.fillStyle = color;
-  const blades = 6;
+  // bark rings — short perpendicular notches along the trunk
+  ctx.lineWidth = h * 0.028;
+  ctx.globalAlpha = pm.opacity * 0.6;
+  for (let i = 1; i <= 5; i++) {
+    const t = i / 6;
+    const bx = 2 * t * (1 - t) * p1x + t * t * p2x;
+    const by = 2 * t * (1 - t) * p1y + t * t * p2y;
+    const dx = 2 * (1 - t) * p1x + 2 * t * (p2x - p1x);
+    const dy = 2 * (1 - t) * p1y + 2 * t * (p2y - p1y);
+    const dl = Math.hypot(dx, dy) || 1;
+    const seg = h * 0.045;
+    ctx.beginPath();
+    ctx.moveTo(bx - (dy / dl) * seg, by + (dx / dl) * seg);
+    ctx.lineTo(bx + (dy / dl) * seg, by - (dx / dl) * seg);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = pm.opacity;
+
+  // fronds — a drooping fan radiating from the crown
+  ctx.strokeStyle = frondColor;
+  const blades = 9;
   const rng = createRng(`palm-${pm.seed}`);
   for (let i = 0; i < blades; i++) {
     const f = i / (blades - 1) - 0.5;
-    const ang = Math.PI / 2 + f * 1.9 + (rng() - 0.5) * 0.12;
-    const len = h * (0.5 + Math.abs(f) * 0.28) * (0.82 + rng() * 0.3);
-    const tipX = crownX + Math.cos(ang) * len;
-    const tipY = crownY + Math.sin(ang) * len;
+    const ang = Math.PI / 2 + f * 2.1 + (rng() - 0.5) * 0.1;
+    const len = h * (0.5 + (0.5 - Math.abs(f)) * 0.3) * (0.82 + rng() * 0.3);
+    // the tip arcs downward past the crown — a palm droops, an umbrella doesn't
+    const tipX = crownX + Math.cos(ang) * len * 0.88;
+    const tipY = crownY + Math.sin(ang) * len * 0.88 + h * 0.16;
     const midX = crownX + Math.cos(ang) * len * 0.5;
-    const midY = crownY + Math.sin(ang) * len * 0.5 + len * 0.12;
-    // blade with two notches — a simple sawtooth silhouette
+    const midY = crownY + Math.sin(ang) * len * 0.5 + h * 0.03;
+    ctx.lineWidth = h * 0.034;
     ctx.beginPath();
     ctx.moveTo(crownX, crownY);
     ctx.quadraticCurveTo(midX, midY, tipX, tipY);
-    const teeth = 2;
-    for (let k = 0; k < teeth; k++) {
-      const tt = 0.35 + (k / teeth) * 0.5;
-      const px = crownX + Math.cos(ang) * len * tt;
-      const py = crownY + Math.sin(ang) * len * tt;
-      ctx.lineTo(px + Math.cos(ang) * 14, py + Math.sin(ang) * 14);
+    ctx.stroke();
+    // leaflets along the frond
+    const dirX = tipX - crownX;
+    const dirY = tipY - crownY;
+    const dl = Math.hypot(dirX, dirY) || 1;
+    const side = i % 2 === 0 ? 1 : -1;
+    ctx.lineWidth = h * 0.02;
+    for (let k = 0; k < 3; k++) {
+      const tt = 0.38 + (k / 3) * 0.44;
+      const lx = (1 - tt) * (1 - tt) * crownX + 2 * tt * (1 - tt) * midX + tt * tt * tipX;
+      const ly = (1 - tt) * (1 - tt) * crownY + 2 * tt * (1 - tt) * midY + tt * tt * tipY;
+      ctx.beginPath();
+      ctx.moveTo(lx, ly);
+      ctx.lineTo(lx - (dirY / dl) * h * 0.05 * side, ly + (dirX / dl) * h * 0.05 * side);
+      ctx.stroke();
     }
-    ctx.closePath();
+  }
+
+  // coconuts — a small brown cluster just under the crown
+  ctx.fillStyle = trunkColor;
+  for (let i = 0; i < 3; i++) {
+    const a = rng() * Math.PI * 2;
+    const rr = h * 0.045 * (0.85 + rng() * 0.3);
+    const cx = crownX + Math.cos(a) * h * 0.05;
+    const cy = crownY + h * 0.055 + Math.sin(a) * h * 0.03;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rr, 0, Math.PI * 2);
     ctx.fill();
   }
+
   ctx.restore();
 }
 
