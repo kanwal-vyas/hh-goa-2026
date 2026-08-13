@@ -265,18 +265,21 @@ export class BirdFlock {
       // reduced motion: still wings, still the same sky
       const flap = reducedMotion ? 0.35 : Math.sin(t * b.flapSpeed + b.flapPhase);
       ctx.fillStyle = `rgba(6, 24, 17, ${b.opacity.toFixed(3)})`;
-      drawBird(ctx, x, y, s, flap, b.variant);
+      // the swallow silhouette has a nose — face the direction of travel
+      ctx.save();
+      ctx.translate(x, y);
+      if (b.vx < 0) ctx.scale(-1, 1);
+      drawBird(ctx, 0, 0, s, flap, b.variant);
+      ctx.restore();
     }
     ctx.restore();
   }
 }
 
 /**
- * A tiny procedural gull silhouette: an elliptical body plus two separate
- * filled wing shapes (each drawn on its own path, so they can never
- * self-intersect into a degenerate sliver). The wings beat together as
- * the bird flaps. 4 shape variants — different wing sweep, lift and body
- * length — keep the flock from looking like one icon pasted 30 times.
+ * Draw one bird. x/y is the center, s the depth-scaled size. flap is the
+ * shared wing-beat in [-1, 1]; variant picks one of 4 silhouette shapes so
+ * the flock doesn't look like one icon pasted 30 times.
  */
 function drawBird(
   ctx: CanvasRenderingContext2D,
@@ -296,24 +299,25 @@ function drawBird(
   ctx.save();
   ctx.translate(x, y);
 
-  // body — a slim horizontal ellipse, tail slightly beyond the wings
+  // Angular "swallow" silhouette: a beak point at the front, each wing swept
+  // back to a sharp tip, with a stepped notch cut in near the tail (the
+  // signature zigzag from the reference photo) instead of a smooth curve.
   ctx.beginPath();
-  ctx.ellipse(0, 0, s * bodyLen, s * 0.15, 0, 0, Math.PI * 2);
-  ctx.fill();
-
-  // left wing — swept back and up, filled on its own closed path
-  ctx.beginPath();
-  ctx.moveTo(s * 0.05, -s * 0.05);
-  ctx.quadraticCurveTo(-s * sweep * 0.5, -s * wl * 0.55, -s * sweep, -s * wl);
-  ctx.quadraticCurveTo(-s * sweep * 0.62, -s * wl * 0.42, -s * bodyLen * 0.38, s * 0.02);
-  ctx.closePath();
-  ctx.fill();
-
-  // right wing — mirrored
-  ctx.beginPath();
-  ctx.moveTo(-s * 0.05, -s * 0.05);
-  ctx.quadraticCurveTo(s * sweep * 0.5, -s * wl * 0.55, s * sweep, -s * wl);
-  ctx.quadraticCurveTo(s * sweep * 0.62, -s * wl * 0.42, s * bodyLen * 0.38, s * 0.02);
+  // nose / beak
+  ctx.moveTo(s * bodyLen * 0.45, 0);
+  // right wing: leading edge out to the tip
+  ctx.lineTo(s * sweep * 0.5, -s * wl * 0.35);
+  ctx.lineTo(s * sweep, -s * wl);
+  // stepped notch back in toward the tail (the angular "step" in the ref image)
+  ctx.lineTo(s * sweep * 0.55, -s * wl * 0.3);
+  ctx.lineTo(s * bodyLen * 0.3, -s * 0.06);
+  // tail tip
+  ctx.lineTo(s * bodyLen * 0.15, s * 0.04);
+  // left wing: mirror of the right, tail to tip to notch back to nose
+  ctx.lineTo(-s * bodyLen * 0.3, -s * 0.06);
+  ctx.lineTo(-s * sweep * 0.55, -s * wl * 0.3);
+  ctx.lineTo(-s * sweep, -s * wl);
+  ctx.lineTo(-s * sweep * 0.5, -s * wl * 0.35);
   ctx.closePath();
   ctx.fill();
 
